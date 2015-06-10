@@ -157,7 +157,6 @@ class PyGameUI(GameUI):
                     if game_over:
                         if self.game.get_state().is_win():
                             winning_cells = self.game.get_state().get_winner_positions()
-                            print('Winning cells: ', winning_cells)
                             winning_agent = self.game.get_agent(self.game.get_state().get_winner())
                             print("The winner is: " + winning_agent.get_name() + "!")
                         elif self.game.get_state().is_tie():
