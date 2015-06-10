@@ -102,7 +102,7 @@ class PyGameUI(GameUI):
         # Preloads font to avoid delays during the execution
         self.legend_font = pygame.font.SysFont(pygame.font.get_default_font(), 16)
         if self.timeout > 0:
-            self.timer_font = pygame.font.Font('resources/timer_font.ttf', 25)
+            self.timer_font = pygame.font.Font('resources/timer_font.ttf', 24)
 
         winning_cells = []
         game_over = False
@@ -292,12 +292,12 @@ class PyGameUI(GameUI):
     def draw_timer(self, timer_value):
         # Gets total minutes and seconds
         (mins, secs) = divmod(timer_value, 60)
-        font = pygame.font.SysFont(pygame.font.get_default_font(), 25)
         timer_str = "{0:02}:{1:02}".format(mins, secs)
         font_col = (255-self.bg_color[0],255-self.bg_color[1],255-self.bg_color[2])
         font_timer = self.timer_font.render(timer_str, True, font_col)
         #rect = font_timer.get_rect()
-        self.display.blit(font_timer, (self.board_rect.left, self.board_rect.bottom+(self.win_geometry[1]-self.board_rect.bottom)//2))
+        #self.display.blit(font_timer, (self.board_rect.left, self.board_rect.bottom+(self.win_geometry[1]-self.board_rect.bottom)//2))
+        self.display.blit(font_timer, (self.board_rect.left, self.board_rect.bottom+font_timer.get_rect().height//2))
 
     def board_to_screen_coords(self, pos):
         """
