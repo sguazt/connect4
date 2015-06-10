@@ -27,21 +27,21 @@ class GridBoard:
     Each cell of the grid has a coordinate (x,y), where x grows from left to
     right (starting from 0 until W-1) and y grows from bottom to up (starting from 0 until H-1).
     For instance, a 7x6 board can be depicted as follows:
-        (0,5)         (6,5)
-        |-|-|-|-|-|-|-|
-        | | | | | | | |
-        |-|-|-|-|-|-|-|
-        | | | | | | | |
-        |-|-|-|-|-|-|-|
-        | | | | | | | |
-        |-|-|-|-|-|-|-|
-        | | | | | | | |
-        |-|-|-|-|-|-|-|
-        | | | | | | | |
-        |-|-|-|-|-|-|-|
-        | | | | | | | |
-        |-|-|-|-|-|-|-|
         (0,0)         (6,0)
+        |-|-|-|-|-|-|-|
+        | | | | | | | |
+        |-|-|-|-|-|-|-|
+        | | | | | | | |
+        |-|-|-|-|-|-|-|
+        | | | | | | | |
+        |-|-|-|-|-|-|-|
+        | | | | | | | |
+        |-|-|-|-|-|-|-|
+        | | | | | | | |
+        |-|-|-|-|-|-|-|
+        | | | | | | | |
+        |-|-|-|-|-|-|-|
+        (0,5)         (6,5)
     """
 
     INVALID_TOKEN = None
@@ -189,21 +189,21 @@ class StackBoard:
     Each cell of the grid has a coordinate (x,y), where x grows from left to
     right (starting from 0 until W-1) and y grows from bottom to up (starting from 0 until H-1).
     For instance, a 7x6 board can be depicted as follows:
-        (0,5)         (6,5)
-        |-|-|-|-|-|-|-|
-        | | | | | | | |
-        |-|-|-|-|-|-|-|
-        | | | | | | | |
-        |-|-|-|-|-|-|-|
-        | | | | | | | |
-        |-|-|-|-|-|-|-|
-        | | | | | | | |
-        |-|-|-|-|-|-|-|
-        | | | | | | | |
-        |-|-|-|-|-|-|-|
-        | | | | | | | |
-        |-|-|-|-|-|-|-|
         (0,0)         (6,0)
+        |-|-|-|-|-|-|-|
+        | | | | | | | |
+        |-|-|-|-|-|-|-|
+        | | | | | | | |
+        |-|-|-|-|-|-|-|
+        | | | | | | | |
+        |-|-|-|-|-|-|-|
+        | | | | | | | |
+        |-|-|-|-|-|-|-|
+        | | | | | | | |
+        |-|-|-|-|-|-|-|
+        | | | | | | | |
+        |-|-|-|-|-|-|-|
+        (0,5)         (6,5)
     """
 
     INVALID_TOKEN = None
@@ -349,21 +349,21 @@ class Board(StackBoard):
     Each cell of the grid has a coordinate (x,y), where x grows from left to
     right (starting from 0 until W-1) and y grows from bottom to up (starting from 0 until H-1).
     For instance, a 7x6 board can be depicted as follows:
-        (0,5)         (6,5)
-        |-|-|-|-|-|-|-|
-        | | | | | | | |
-        |-|-|-|-|-|-|-|
-        | | | | | | | |
-        |-|-|-|-|-|-|-|
-        | | | | | | | |
-        |-|-|-|-|-|-|-|
-        | | | | | | | |
-        |-|-|-|-|-|-|-|
-        | | | | | | | |
-        |-|-|-|-|-|-|-|
-        | | | | | | | |
-        |-|-|-|-|-|-|-|
         (0,0)         (6,0)
+        |-|-|-|-|-|-|-|
+        | | | | | | | |
+        |-|-|-|-|-|-|-|
+        | | | | | | | |
+        |-|-|-|-|-|-|-|
+        | | | | | | | |
+        |-|-|-|-|-|-|-|
+        | | | | | | | |
+        |-|-|-|-|-|-|-|
+        | | | | | | | |
+        |-|-|-|-|-|-|-|
+        | | | | | | | |
+        |-|-|-|-|-|-|-|
+        (0,5)         (6,5)
     """
     pass
 
@@ -438,6 +438,12 @@ class GameState:
         new_state.board.push_token(agent_index, action)
 
         return new_state
+
+    def make_move(self, agent_index, action):
+        """
+        Applies the given action in the current state.
+        """
+        self.board.push_token(agent_index, action)
 
     def get_winner_positions(self):
         """
@@ -662,8 +668,9 @@ class Game:
         agent = self.get_current_agent()
         column = agent.get_action(self.state)
         if column != None:
-            row = self.state.board.push_token(agent.get_index(), column)
+            #row = self.state.board.push_token(agent.get_index(), column)
             #print('Agent ', agent.get_index(), ' placed a token in row: ', row, ' and col: ', column)
+            self.state.make_move(agent.get_index(), column)
         self.cur_agent_idx = (self.cur_agent_idx+1) % len(self.agents)
 
     def is_over(self):
