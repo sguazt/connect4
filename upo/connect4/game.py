@@ -342,7 +342,31 @@ class StackBoard:
 
 
 class Board(StackBoard):
+    """
+    Represents a board for the Connect 4 game.
+
+    From the user point of view a board is a WxH grid with width W and height H.
+    Each cell of the grid has a coordinate (x,y), where x grows from left to
+    right (starting from 0 until W-1) and y grows from bottom to up (starting from 0 until H-1).
+    For instance, a 7x6 board can be depicted as follows:
+        (0,5)         (6,5)
+        |-|-|-|-|-|-|-|
+        | | | | | | | |
+        |-|-|-|-|-|-|-|
+        | | | | | | | |
+        |-|-|-|-|-|-|-|
+        | | | | | | | |
+        |-|-|-|-|-|-|-|
+        | | | | | | | |
+        |-|-|-|-|-|-|-|
+        | | | | | | | |
+        |-|-|-|-|-|-|-|
+        | | | | | | | |
+        |-|-|-|-|-|-|-|
+        (0,0)         (6,0)
+    """
     pass
+
 
 ################################################################################
 
