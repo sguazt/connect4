@@ -24,9 +24,14 @@ import upo.connect4.ui
 
 
 class AgentFactory:
+    EASY_LEVEL = 2
+    MEDIUM_LEVEL = 3
+    HARD_LEVEL = 4
+    NOHOPE_LEVEL = -1
+    DEFAULT_DEPTH = EASY_LEVEL
+
     def __init__(self):
-        #self.ids = ['firstfit', 'human', 'minimax', 'random']
-        self.ids = ['firstfit', 'minimax', 'random']
+        self.ids = ['alphabeta', 'expectimax', 'firstfit', 'human', 'minimax', 'random']
 
     def get_available_agents(self):
         return self.ids
@@ -34,12 +39,16 @@ class AgentFactory:
     def make_agent(self, agent_id, agent_index, *args):
         #if agent_id not in self.ids:
         #    raise Exception('Unknown agent identifier "' + agent_id + '"')
+        if agent_id == 'alphabeta':
+            return upo.connect4.agents.AlphaBetaMinimaxComputerAgent(agent_index, self.DEFAULT_DEPTH)
         if agent_id == 'firstfit':
             return upo.connect4.agents.FirstFitComputerAgent(agent_index)
+        if agent_id == 'expectimax':
+            return upo.connect4.agents.ExpectimaxComputerAgent(agent_index, self.DEFAULT_DEPTH)
         if agent_id == 'human':
             return upo.connect4.agents.HumanAgent(agent_index)
         if agent_id == 'minimax':
-            return upo.connect4.agents.MinimaxComputerAgent(agent_index, 2)
+            return upo.connect4.agents.MinimaxComputerAgent(agent_index, self.DEFAULT_DEPTH)
         if agent_id == 'random':
             return upo.connect4.agents.RandomComputerAgent(agent_index)
 

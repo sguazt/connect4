@@ -24,6 +24,6 @@ def raise_undefined_method():
     line = inspect.stack()[1][2]
     method = inspect.stack()[1][3]
 
-    print '[ERROR] Method not implemented: %s at line %s of %s' % (method, line, fileName)
+    print('[ERROR] Method not implemented: %s at line %s of %s' % (method, line, fileName))
     sys.exit(1)
 

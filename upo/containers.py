@@ -59,7 +59,7 @@ class Matrix:
 
     def __eq__(self, other):
         if other == None:
-			return False
+            return False
         return self.data == other.data
 
     def __hash__(self):
@@ -126,7 +126,7 @@ class Grid:
 
     def __eq__(self, other):
         if other == None:
-			return False
+            return False
         return self.data == other.data
 
     def __hash__(self):
@@ -173,5 +173,5 @@ class Grid:
         for x in range(self.w):
             for y in range(self.h):
                 if self[x][y] == value:
-					lst.append((x,y))
+                    lst.append((x,y))
         return lst

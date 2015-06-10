@@ -131,8 +131,8 @@ class Board:
                     w = max(w, 4)
         out = [['{:>{width}}'.format(str(self.data[x][y]), width=w) for x in range(self.width())] for y in range(self.height())]
         #for x in out:
-        #    print 'Inspect: ', x
-        #    print 'Reverse: ', x.reverse()
+        #    print('Inspect: ', x)
+        #    print('Reverse: ', x.reverse())
         return '\n'.join([' '.join(x) for x in out])
 
 
@@ -379,6 +379,15 @@ class GameState:
                 return True
         return False
 
+    def get_winner(self):
+        win_pos = self.get_winner_positions()
+        # Make sure this is a winning situation
+        if len(win_pos) > 0:
+            # Check if the winning token belongs to the given agent
+            (x,y) = win_pos[0]
+            return self.board.get_token(x, y)
+        return None
+
 
 ################################################################################
 
@@ -413,12 +422,15 @@ class Game:
     def num_agents(self):
         return len(self.agents)
 
+    def get_agent(self, agent_index):
+        return self.agents[agent_index]
+
     def make_move(self):
         agent = self.get_current_agent()
         column = agent.get_action(self.state)
         if column != None:
             row = self.state.board.push_token(agent.get_index(), column)
-            #print 'Agent ', agent.get_index(), ' placed a token in row: ', row, ' and col: ', column
+            #print('Agent ', agent.get_index(), ' placed a token in row: ', row, ' and col: ', column)
         self.cur_agent_idx = (self.cur_agent_idx+1) % len(self.agents)
 
     def is_over(self):
