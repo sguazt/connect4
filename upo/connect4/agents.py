@@ -118,6 +118,36 @@ def default_evaluation_function(game_state, agent_index):
         return -1.0
     return 0.0
 
+
+def alternative_evaluation_function(game_state, agent_index):
+    if game_state.is_final():
+        if game_state.is_winner(agent_index):
+            return 1.0
+        if game_state.is_tie():
+            return 0.0
+        return -1.0
+    final_actions = 0
+    winning_actions = 0
+    losing_actions = 0
+    for c in range(game_state.get_board().width()):
+        for r in range(game_state.get_board().get_column_empty_row(c), game_state.get_board().height()):
+            for a in range(game_state.num_agents()):
+                game_state.get_board().push_token(a, c)
+                if game_state.is_final():
+                    final_actions += 1
+                    if game_state.is_winner(agent_index):
+                        winning_actions += 1
+                    else:
+                        losing_actions += 1
+                game_state.get_board().pop_token(c)
+    if final_actions > 0:
+        return (winning_actions-losing_actions)/final_actions
+    return 0.0
+
+
+################################################################################
+
+
 class MinimaxComputerAgent(ComputerAgent):
     """
     A computer-controlled agent that chooses its action according to the

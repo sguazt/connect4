@@ -55,7 +55,8 @@ def generate_color_palette(n):
     #RGB_tuples = map(lambda x: colorsys.hsv_to_rgb(*x), HSV_tuples)
     RGB_tuples = []
     for rgb in HSV_tuples:
-        rgb = map(lambda x: int(x*255),colorsys.hsv_to_rgb(*rgb))
+        #rgb = map(lambda x: int(x*255),colorsys.hsv_to_rgb(*rgb))
+        rgb = [int(x*255) for x in colorsys.hsv_to_rgb(*rgb)]
         RGB_tuples.append(rgb)
 
     return RGB_tuples
