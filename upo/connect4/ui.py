@@ -124,8 +124,9 @@ class PyGameUI(GameUI):
                         # Pushes the token on the corresponding board column
                         if self.is_inside_board(event.pos):
                             (c, r) = self.screen_to_board_coords(event.pos)
-                            self.game.get_current_agent().set_action(c)
-                            wait_interaction = False
+                            if self.game.get_state().is_legal_action(c):
+                                self.game.get_current_agent().set_action(c)
+                                wait_interaction = False
                     else:
                         wait_interaction = True
                         # Draws a highlight box around the column under the mouse pointer
