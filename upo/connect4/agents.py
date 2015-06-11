@@ -282,11 +282,14 @@ class AlphaBetaMinimaxComputerAgent(ComputerAgent):
         min_action = None
         for action in game_state.get_legal_actions():
             #print('ALPHA-BETA-MIN-DECISION Action: ', action)
+            #successor_game_state = game_state ##XXX
+            #successor_game_state.get_board().push_token(agent_index, action) ##XXX
             successor_game_state = game_state.generate_successor(agent_index, action)
             (successor_value,successor_action) = self.make_minimax_decision(successor_game_state, agent_index, alpha, beta, depth+1)
             if successor_value < min_value:
                 min_value = successor_value
                 min_action = action
+            #successor_game_state.get_board().pop_token(action) ##XXX
             if min_value <= alpha:
                 break
             beta = min(beta, min_value)

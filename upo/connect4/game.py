@@ -474,6 +474,12 @@ class GameState:
         """
         self.board.push_token(agent_index, action)
 
+    def unmake_move(self, action):
+        """
+        Undo the given action in the current state.
+        """
+        self.board.pop_token(action)
+
     def get_winner_positions(self):
         """
         Returns a list of (column,row) pairs representing the winning positions,
@@ -481,10 +487,10 @@ class GameState:
         """
         pos = []
         for x in range(self.board.width()):
-            for y in range(self.board.height()):
-            #for y in range(self.board.get_column_empty_row(x)+1, self.board.height()):
-                if not self.board.has_token(x, y):
-                    continue
+            #for y in range(self.board.height()):
+            for y in range(self.board.get_column_empty_row(x)+1, self.board.height()):
+                #if not self.board.has_token(x, y):
+                #    continue
                 token = self.board.get_token(x, y)
                 if x < (self.board.width()-3):
                     # check horizontal '-' pattern
@@ -585,34 +591,79 @@ class GameState:
         True as well.
         """
         for x in range(self.board.width()):
-            for y in range(self.board.height()):
+            #for y in range(self.board.height()):
+            #for y in range(self.board.get_column_empty_row(x)+1, self.board.height()):
+            y = 0
+            token = self.board.get_token(x, y)
+            if x < (self.board.width()-3):
+                # check horizontal '-' pattern
+                if (self.board.get_token(x+1, y) in [token, self.board.INVALID_TOKEN] and
+                    self.board.get_token(x+2, y) in [token, self.board.INVALID_TOKEN] and
+                    self.board.get_token(x+3, y) in [token, self.board.INVALID_TOKEN]):
+                    return True
+                # check right diagonal '/' pattern
+                if (y >= 3 and
+                    self.board.get_token(x+1, y-1) in [token, self.board.INVALID_TOKEN] and
+                    self.board.get_token(x+2, y-2) in [token, self.board.INVALID_TOKEN] and
+                    self.board.get_token(x+3, y-3) in [token, self.board.INVALID_TOKEN]):
+                    return True
+                ## check left diagonal '\' pattern
+                if (y < (self.board.height()-3) and
+                    self.board.get_token(x+1, y+1) in [token, self.board.INVALID_TOKEN] and
+                    self.board.get_token(x+2, y+2) in [token, self.board.INVALID_TOKEN] and
+                    self.board.get_token(x+3, y+3) in [token, self.board.INVALID_TOKEN]):
+                    return True
+            # check vertical pattern
+            if (y < (self.board.height()-3) and
+                self.board.get_token(x, y+1) in [token, self.board.INVALID_TOKEN] and
+                self.board.get_token(x, y+2) in [token, self.board.INVALID_TOKEN] and
+                self.board.get_token(x, y+3) in [token, self.board.INVALID_TOKEN]):
+                return True
+        return False
+
+    def is_win(self):
+        """
+        Tells if the current state is a winning situation.
+        """
+        #return len(self.get_winner_positions()) > 0
+        for x in range(self.board.width()):
+            #for y in range(self.board.height()):
+            for y in range(self.board.get_column_empty_row(x)+1, self.board.height()):
                 token = self.board.get_token(x, y)
                 if x < (self.board.width()-3):
                     # check horizontal '-' pattern
-                    if (self.board.get_token(x+1, y) in [token, self.board.INVALID_TOKEN] and
-                        self.board.get_token(x+2, y) in [token, self.board.INVALID_TOKEN] and
-                        self.board.get_token(x+3, y) in [token, self.board.INVALID_TOKEN]):
+                    if (self.board.get_token(x+1, y) == token and
+                        self.board.get_token(x+2, y) == token and
+                        self.board.get_token(x+3, y) == token):
                         return True
                     # check right diagonal '/' pattern
                     if (y >= 3 and
-                        self.board.get_token(x+1, y-1) in [token, self.board.INVALID_TOKEN] and
-                        self.board.get_token(x+2, y-2) in [token, self.board.INVALID_TOKEN] and
-                        self.board.get_token(x+3, y-3) in [token, self.board.INVALID_TOKEN]):
+                        self.board.get_token(x+1, y-1) == token and
+                        self.board.get_token(x+2, y-2) == token and
+                        self.board.get_token(x+3, y-3) == token):
                         return True
                     ## check left diagonal '\' pattern
                     if (y < (self.board.height()-3) and
-                        self.board.get_token(x+1, y+1) in [token, self.board.INVALID_TOKEN] and
-                        self.board.get_token(x+2, y+2) in [token, self.board.INVALID_TOKEN] and
-                        self.board.get_token(x+3, y+3) in [token, self.board.INVALID_TOKEN]):
+                        self.board.get_token(x+1, y+1) == token and
+                        self.board.get_token(x+2, y+2) == token and
+                        self.board.get_token(x+3, y+3) == token):
                         return True
                 # check vertical pattern
                 if (y < (self.board.height()-3) and
-                    self.board.get_token(x, y+1) in [token, self.board.INVALID_TOKEN] and
-                    self.board.get_token(x, y+2) in [token, self.board.INVALID_TOKEN] and
-                    self.board.get_token(x, y+3) in [token, self.board.INVALID_TOKEN]):
-                    pos = [(x,y), (x,y+1), (x,y+2), (x,y+3)]
+                    self.board.get_token(x, y+1) == token and
+                    self.board.get_token(x, y+2) == token and
+                    self.board.get_token(x, y+3) == token):
                     return True
         return False
+
+
+    def is_tie(self):
+        """
+        Tells if the current state is a tie situation (i.e., a situation with no
+        winner).
+        """
+        #return self.is_final() and not self.is_win()
+        return not self.can_win()
 
     def is_final(self):
         """
@@ -622,20 +673,8 @@ class GameState:
         - if the board is full, or
         - if the space left cannot contain a winner combination.
         """
-        return self.is_win() or self.board.is_full() or not self.can_win()
-
-    def is_win(self):
-        """
-        Tells if the current state is a winning situation.
-        """
-        return len(self.get_winner_positions()) > 0
-
-    def is_tie(self):
-        """
-        Tells if the current state is a tie situation (i.e., a situation with no
-        winner).
-        """
-        return self.is_final() and not self.is_win()
+        #return self.board.is_full() or self.is_win() or not self.can_win()
+        return self.board.is_full() or self.is_win() or self.is_tie()
 
     def is_winner(self, agent_index):
         win_pos = self.get_winner_positions()
