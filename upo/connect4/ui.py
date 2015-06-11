@@ -133,7 +133,7 @@ class PyGameUI(GameUI):
                     # In case of interactive agent, there are more interesting things to check
                     if wait_interaction:
                         if event.type == pygame.MOUSEBUTTONDOWN:
-                            # Pushes the token on the corresponding board column
+                            # Tells the human agento to push the token on the corresponding board column
                             if self.is_inside_board(event.pos):
                                 (c, r) = self.screen_to_board_coords(event.pos)
                                 if self.game.get_state().is_legal_action(c):
@@ -148,9 +148,16 @@ class PyGameUI(GameUI):
                             else:
                                 column_highlight = False
                 # Plays the game
+                move_timer_count = 0
                 if not wait_interaction:
                     if not game_over:
+                        agent_move_clock = None
+                        if not self.game.get_current_agent().is_interactive():
+                            agent_move_clock = pygame.time.Clock()
                         self.game.make_move()
+                        if agent_move_clock:
+                            agent_move_clock.tick()
+                            move_timer_count = agent_move_clock.get_rawtime()//1000
                         game_over = self.game.is_over()
                         if game_over:
                             if self.game.get_state().is_win():
@@ -164,7 +171,7 @@ class PyGameUI(GameUI):
                 # Updates the timer
                 if self.timeout > 0 and not game_over:
                     # Computes total seconds
-                    timer_value = self.timeout - timer_count//self.fps
+                    timer_value = self.timeout - timer_count//self.fps - move_timer_count
                     if timer_value < 0:
                         timer_value = 0
                     if timer_value == 0:
