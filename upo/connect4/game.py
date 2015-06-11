@@ -49,6 +49,19 @@ class GridBoard:
     def __init__(self, width, height):
         self.data = upo.containers.Grid(width, height, self.INVALID_TOKEN)
 
+    def copy(self):
+        b = Board(self.w, self.h)
+        b.data = self.data.copy()
+        return b
+
+    def deep_copy(self):
+        return self.copy()
+
+    def shallow_copy(self):
+        b = Board(self.w, self.h)
+        b.data = self.data
+        return b
+
     def can_push_token(self, column):
         """
         Tells if a token can be pushed down to the given column.
@@ -213,6 +226,19 @@ class StackBoard:
         self.data = [[] for i in range(width)]
         self.w = width
         self.h = height
+
+    def copy(self):
+        b = Board(self.w, self.h)
+        b.data = [x[:] for x in self.data]
+        return b
+
+    def deep_copy(self):
+        return self.copy()
+
+    def shallow_copy(self):
+        b = Board(self.w, self.h)
+        b.data = self.data
+        return b
 
     def can_push_token(self, column):
         """
@@ -434,7 +460,10 @@ class GameState:
         if not self.is_legal_action(action):
             raise Exception('Cannot generate a successor of a state from an illegal action.')
 
-        new_state = copy.deepcopy(self)
+        #new_state = copy.deepcopy(self)
+        new_state = GameState(self.get_layout(), self.nagents)
+        new_state.board = self.board.deep_copy()
+        new_state.nagents = self.nagents
         new_state.board.push_token(agent_index, action)
 
         return new_state
