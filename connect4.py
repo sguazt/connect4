@@ -114,8 +114,8 @@ def parse_options():
     parser.add_argument('-a', '--agent', action='append', dest='agents',
                         choices=AgentFactory.get_available_agents(),
                         help='The type of a player agent.', default=[])
-    parser.add_argument('--agentclass', dest='agent_class', type=str,
-                        help='The fully qualified class name of the custom agent; only used when the agent type is "custom" (see option "--agent").', default='upo.connect4.agents.MyAgent')
+    parser.add_argument('--agentclass', action='append', dest='agent_classes', type=str,
+                        help='The fully qualified class name of the custom agent (e.g., upo.connect4.agents.MyAgent); only used when the agent type is "custom" (see option "--agent").', default=[])
     parser.add_argument('-d', '--difficulty', dest='difficulty', type=str,
                         help='The level of difficulty of the game (valid only for intelligent computer agents.', default=str(GameDifficulty.default_difficulty))
     parser.add_argument('--fps', dest='fps', type=int,
@@ -132,6 +132,9 @@ def parse_options():
     # We need at least two agents
     while len(args.agents) <= 1:
         args.agents.append('random')
+    # Check arguments consistency
+    if args.agents.count('custom') != len(args.agent_classes):
+        parser.error('Agent class not found for "custom" agent')
 
     return args
 
@@ -147,6 +150,8 @@ if __name__ == '__main__':
     agents = []
     agent_idx = 0
     for agent in args.agents:
+        if agent == 'custom':
+            args.agent_class = args.agent_classes.pop(0)
         agents.append(agent_factory.make_agent(agent, agent_idx, args))
         agent_idx += 1
     #agents = [upo.connect4.agents.RandomComputerAgent(0),
