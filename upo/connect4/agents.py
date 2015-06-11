@@ -160,10 +160,10 @@ class MinimaxComputerAgent(ComputerAgent):
     See:
     - S. Russell and P. Norvig, "Artificial Intelligence: A Modern Approach," 3rd Edition, Prentice Hall, 2010.
     """
-    def __init__(self, index, depth=float('+inf')):
+    def __init__(self, index, depth=float('+inf'), eval_func=default_evaluation_function):
         ComputerAgent.__init__(self, index)
         self.depth = depth
-        self.evaluation_function = default_evaluation_function
+        self.evaluation_function = eval_func
 
     def get_depth(self):
         return self.depth
@@ -248,10 +248,10 @@ class AlphaBetaMinimaxComputerAgent(ComputerAgent):
     See:
     - S. Russell and P. Norvig, "Artificial Intelligence: A Modern Approach," 3rd Edition, Prentice Hall, 2010.
     """
-    def __init__(self, index, depth=float('+inf')):
+    def __init__(self, index, depth=float('+inf'), eval_func=default_evaluation_function):
         ComputerAgent.__init__(self, index)
         self.depth = depth
-        self.evaluation_function = default_evaluation_function
+        self.evaluation_function = eval_func
 
     def get_depth(self):
         return self.depth
@@ -339,10 +339,10 @@ class ExpectimaxComputerAgent(ComputerAgent):
     See:
     - S. Russell and P. Norvig, "Artificial Intelligence: A Modern Approach," 3rd Edition, Prentice Hall, 2010.
     """
-    def __init__(self, index, depth=float('+inf')):
+    def __init__(self, index, depth=float('+inf'), eval_func=default_evaluation_function):
         ComputerAgent.__init__(self, index)
         self.depth = depth
-        self.evaluation_function = default_evaluation_function
+        self.evaluation_function = eval_func
 
     def get_depth(self):
         return self.depth
