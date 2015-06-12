@@ -50,14 +50,24 @@ class GridBoard:
         self.data = upo.containers.Grid(width, height, self.INVALID_TOKEN)
 
     def copy(self):
+        """
+        Creates an deep copy of this board.
+        """
         b = Board(self.w, self.h)
         b.data = self.data.copy()
         return b
 
     def deep_copy(self):
+        """
+        Creates an deep copy of this board.
+        Same as the copy method.
+        """
         return self.copy()
 
     def shallow_copy(self):
+        """
+        Creates a shallow (alias) copy of this board.
+        """
         b = Board(self.w, self.h)
         b.data = self.data
         return b
@@ -166,6 +176,9 @@ class GridBoard:
         self.data = upo.containers.Grid(self.data.width(), self.data.height(), self.INVALID_TOKEN)
 
     def __str__(self):
+        """
+        Creates a string representation of this board.
+        """
         # Compute
         w = -1
         for x in range(self.width()):
@@ -181,11 +194,19 @@ class GridBoard:
         return '\n'.join([' '.join(x) for x in out])
 
     def to_user_row(self, impl_row):
+        """
+        Transforms the given row from internal representation to user
+        representation.
+        """
         if impl_row < 0:
             return -1
         return impl_row
 
     def to_impl_row(self, user_row):
+        """
+        Transforms the given row from user representation to internal
+        representation.
+        """
         if user_row < 0:
             return -1
         return user_row
@@ -228,14 +249,24 @@ class StackBoard:
         self.h = height
 
     def copy(self):
+        """
+        Creates an deep copy of this board.
+        """
         b = Board(self.w, self.h)
         b.data = [x[:] for x in self.data]
         return b
 
     def deep_copy(self):
+        """
+        Creates an deep copy of this board.
+        Same as the copy method.
+        """
         return self.copy()
 
     def shallow_copy(self):
+        """
+        Creates a shallow (alias) copy of this board.
+        """
         b = Board(self.w, self.h)
         b.data = self.data
         return b
@@ -351,14 +382,25 @@ class StackBoard:
         self.data = [[]]*self.w
 
     def __str__(self):
+        """
+        Creates a string representation of this board.
+        """
         return str(self.data)
 
     def to_user_row(self, impl_row):
+        """
+        Transforms the given row from internal representation to user
+        representation.
+        """
         if impl_row < 0:
             return -1
         return self.h-impl_row-1
 
     def to_impl_row(self, user_row):
+        """
+        Transforms the given row from user representation to internal
+        representation.
+        """
         if user_row < 0:
             return -1
         return self.h-user_row-1
@@ -440,8 +482,8 @@ class GameState:
         """
         Returns the legal actions for the current state.
         """
-        if self.is_final():
-            return []
+        #if self.is_final():
+        #    return []
 
         actions = []
         for x in range(self.board.width()):
@@ -586,15 +628,24 @@ class GameState:
 
     def can_win(self):
         """
-        Tells if in the current state it is possible to win.
+        Tells if in the current state it is possible to win (irrespective of who
+        actually wins).
         Note, if current state represents a winning situation the method returns
         True as well.
         """
+        # Checks from the top of the board (and left-to-right) if there is
+        # enough space to form a pattern or at least 4 tokens of the same
+        # colors.
+        # Note, to do this check it is sufficient to start from the top of each
+        # column, pick the first available token in the column, and check for
+        # one of the possible token patterns.
         for x in range(self.board.width()):
-            #for y in range(self.board.height()):
-            #for y in range(self.board.get_column_empty_row(x)+1, self.board.height()):
+            # Starts at the top of the column
             y = 0
-            token = self.board.get_token(x, y)
+            # Picks the first available token
+            ytok = min(self.board.get_column_empty_row(x)+1, self.board.height()-1)
+            token = self.board.get_token(x, ytok)
+            # Checks for token patterns
             if x < (self.board.width()-3):
                 # check horizontal '-' pattern
                 if (self.board.get_token(x+1, y) in [token, self.board.INVALID_TOKEN] and
@@ -677,6 +728,9 @@ class GameState:
         return self.board.is_full() or self.is_win() or self.is_tie()
 
     def is_winner(self, agent_index):
+        """
+        Tells if the given agent is the winner.
+        """
         win_pos = self.get_winner_positions()
         # Make sure this is a winning situation
         if len(win_pos) > 0:
@@ -687,6 +741,10 @@ class GameState:
         return False
 
     def get_winner(self):
+        """
+        Returns the identifier of the winner agent, if the current state
+        represents a win situation; None, otherwise.
+        """
         win_pos = self.get_winner_positions()
         # Make sure this is a winning situation
         if len(win_pos) > 0:
@@ -695,6 +753,12 @@ class GameState:
             return self.board.get_token(x, y)
         return None
 
+    def __str__(self):
+        """
+        Returns a string representation of this state.
+        """
+        return str(self.board)
+
 
 ################################################################################
 
@@ -702,44 +766,91 @@ class GameState:
 class Game:
     """
     Provides the logic to play to the Connect 4 game.
+
+    Note, to play this game, the following requirements need to be satisfied:
+    - the board layout must be 4x4 or larger (the standard game uses a 7x6 board
+      layout),
+    - the number of agents must be 2 or greater.
     """
     def __init__(self, agents, layout):
         if layout[0] < 4 or layout[1] < 4:
             raise Exception('Board must be at least 4x4 large.')
+        if len(agents) < 2:
+            raise Exception('The game needs at least two agents to play.')
         self.agents = agents
         self.state = GameState(layout, len(agents))
-        self.start_agent_idx = 0
-        self.cur_agent_idx = 0
+        self.start_agent_idx = agents[0].get_index()
+        self.cur_agent_idx = self.start_agent_idx
+
+    def reset(self):
+        """
+        Resets the game to the initial state.
+        """
+        self.state = GameState(self.get_layout(), self.num_agents())
+        self.cur_agent_idx = self.start_agent_idx
 
     def get_state(self):
+        """
+        Gets the current game state.
+        """
         return self.state
 
     def get_layout(self):
+        """
+        Gets the board layout.
+        """
         return self.state.get_layout()
 
     def get_starting_agent(self):
+        """
+        Gets the agent who starts playing.
+        """
         return self.agents[self.start_agent_idx]
 
     def get_current_agent(self):
+        """
+        Gets the currently playing agent.
+        """
         return self.agents[self.cur_agent_idx]
 
     def get_agents(self):
+        """
+        Gets the agents playing the current game.
+        """
         return self.agents
 
     def num_agents(self):
+        """
+        Returns the number of agents playing the current game.
+        """
         return len(self.agents)
 
     def get_agent(self, agent_index):
+        """
+        Gets the agent identified by the given agent index.
+        """
         return self.agents[agent_index]
 
     def make_move(self):
+        """
+        Advances the game by making the move for the current agent and passing
+        the turn to the next agent.
+        Returns the action.
+
+        Note, if you call get_current_agent before and after a call to
+        make_move, the returned agent is in general different because make_move
+        passes the turn to the next agent.
+        """
         agent = self.get_current_agent()
         column = agent.get_action(self.state)
         if column != None:
-            #row = self.state.board.push_token(agent.get_index(), column)
-            #print('Agent ', agent.get_index(), ' placed a token in row: ', row, ' and col: ', column)
+            print('Agent ', agent.get_index(), ' placed a token in column: ', column)
             self.state.make_move(agent.get_index(), column)
         self.cur_agent_idx = (self.cur_agent_idx+1) % len(self.agents)
+        return column
 
     def is_over(self):
+        """
+        Tells if the game is over.
+        """
         return self.state.is_final()
