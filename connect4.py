@@ -50,6 +50,7 @@ class GameDifficulty(enum.IntEnum):
     """
     Enumeration for predefined difficulty levels.
     """
+    very_easy = 1
     easy = 2
     medium = 3
     hard = 4
@@ -66,6 +67,8 @@ class GameDifficulty(enum.IntEnum):
     @classmethod
     def str2int(cls, s):
         ls = s.lower()
+        if ls == 'veryeasy':
+            return cls.very_easy
         if ls == 'easy':
             return cls.easy
         if ls == 'medium':
