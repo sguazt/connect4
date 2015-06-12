@@ -109,7 +109,19 @@ class RandomComputerAgent(ComputerAgent):
 ################################################################################
 
 
-def default_evaluation_function(game_state, agent_index):
+def basic_evaluation_function(game_state, agent, **context):
+    """
+    This simple evaluation functions evaluates a node (i.e., a game state) by
+    only considering if its a terminal node or not, and, in case of a terminal
+    node, if it represents a win or a lose situation.
+    Returns:
+    - 1 if the given state is a win situation for the given agent,
+    - -1 if the given state is a lose situation for the given agent, or
+    - 0 if the given state is a tie situation or if it isn't a terminal state.
+
+    The argument context is not used.
+    """
+    agent_index = agent.get_index()
     if game_state.is_final():
         if game_state.is_winner(agent_index):
             return 1.0
@@ -119,7 +131,33 @@ def default_evaluation_function(game_state, agent_index):
     return 0.0
 
 
-def alternative_evaluation_function(game_state, agent_index):
+def depth_aware_evaluation_function(game_state, agent, **context):
+    """
+    This evaluation function improves the default one, by weighting decisions
+    according to the depth of the tree they have been made.
+    The returned value is a floating point number in [-1,1], where:
+    - positive values represent win situations,
+    - negative values represent lose situations, and
+    - 0 represents a tie situation or a non terminal node.
+
+    In order to work, the context argument must contain the following information:
+    - context['depth']: the current depth of the node that is to be evaluated
+    """
+    agent_index = agent.get_index()
+    turn_depth = 0
+    if 'depth' in context:
+        turn_depth = context['depth']//game_state.num_agents()
+    if game_state.is_final():
+        if game_state.is_winner(agent_index):
+            return 1.0/(turn_depth+1)
+        if game_state.is_tie():
+            return 0.0
+        return -1.0/(turn_depth+1)
+    return 0.0
+
+
+def experimental_evaluation_function(game_state, agent, **context):
+    agent_index = agent.get_index()
     if game_state.is_final():
         if game_state.is_winner(agent_index):
             return 1.0
@@ -143,6 +181,10 @@ def alternative_evaluation_function(game_state, agent_index):
     if final_actions > 0:
         return (winning_actions-losing_actions)/final_actions
     return 0.0
+
+
+# Define the default evaluation function to use in case it is not specified
+default_evaluation_function = depth_aware_evaluation_function
 
 
 ################################################################################
@@ -169,9 +211,9 @@ class MinimaxComputerAgent(ComputerAgent):
         return self.depth
 
     def get_action(self, game_state):
-        #print('Agent: ', self.get_index(), ', Board: \n', game_state.get_board())
+        #print('MINIMAX-DECISION>> Agent: ', self.get_index(), ', Board: \n', game_state.get_board())
         (value, action) = self.make_minimax_decision(game_state, self.get_index(), 0, True)
-        #print("Made MINIMAX-DECISION: ", action)
+        #print("MINIMAX-DECISION>> Final action: ", action)
         return action
 
     def make_minimax_decision(self, game_state, agent_index, depth, first=False):
@@ -182,42 +224,42 @@ class MinimaxComputerAgent(ComputerAgent):
         else:
             next_agent_index = (agent_index+1) % game_state.num_agents()
         if next_agent_index == self.get_index():
-            return self.make_max_decision(game_state, next_agent_index, depth)
+            return self.make_max_decision(game_state, next_agent_index, depth+1)
         else:
-            return self.make_min_decision(game_state, next_agent_index, depth)
+            return self.make_min_decision(game_state, next_agent_index, depth+1)
 
     def make_min_decision(self, game_state, agent_index, depth):
-        #print('Making MIN-DECISION(',agent_index,',',depth,') ')
+        #print('  '*(depth+1) + 'Making MIN-DECISION(',agent_index,',',depth,') ')
         if self.cutoff_test(game_state, depth):
-            #print('[cutoff] Returning MIN-VALUE(',agent_index,',',depth,'): ', self.evaluation_function(game_state, self.get_index()), ' (', None, ')')
-            return (self.evaluation_function(game_state, self.get_index()), None)
+            #print('  '*(depth+1) + '[cutoff] Returning MIN-VALUE(',agent_index,',',depth,'): ', self.evaluation_function(game_state, self, depth=depth), ' (', None, ')')
+            return (self.evaluation_function(game_state, self, depth=depth), None)
         min_value = float('+inf')
         min_action = None
         for action in game_state.get_legal_actions():
-            #print('MIN-DECISION Action: ', action)
+            #print('  '*(depth+1) + 'MIN-DECISION Action: ', action)
             successor_game_state = game_state.generate_successor(agent_index, action)
-            (successor_value,successor_action) = self.make_minimax_decision(successor_game_state, agent_index, depth+1)
+            (successor_value,successor_action) = self.make_minimax_decision(successor_game_state, agent_index, depth)
             if successor_value < min_value:
                 min_value = successor_value
                 min_action = action
-        #print('Returning MIN-VALUE(',agent_index,',',depth,'): ', min_value, ' (', min_action, ')')
+        #print('  '*(depth+1) + 'Returning MIN-VALUE(',agent_index,',',depth,'): ', min_value, ' (', min_action, ')')
         return (min_value, min_action)
 
     def make_max_decision(self, game_state, agent_index, depth):
-        #print('Making MAX-DECISION(',agent_index,',',depth,') ')
+        #print('  '*(depth+1) + 'Making MAX-DECISION(',agent_index,',',depth,') ')
         if self.cutoff_test(game_state, depth):
-            #print('[cutoff] Returning MAX-VALUE(',agent_index,',',depth,'): ', self.evaluation_function(game_state, self.get_index()), ' (', None, ')')
-            return (self.evaluation_function(game_state, self.get_index()), None)
+            #print('  '*(depth+1) + '[cutoff] Returning MAX-VALUE(',agent_index,',',depth,'): ', self.evaluation_function(game_state, self, depth=depth), ' (', None, ')')
+            return (self.evaluation_function(game_state, self, depth=depth), None)
         max_value = float('-inf')
         max_action = None
         for action in game_state.get_legal_actions():
-            #print('MAX-DECISION Action: ', action)
+            #print('  '*(depth+1) + 'MAX-DECISION Action: ', action)
             successor_game_state = game_state.generate_successor(agent_index, action)
-            (successor_value,successor_action) = self.make_minimax_decision(successor_game_state, agent_index, depth+1)
+            (successor_value,successor_action) = self.make_minimax_decision(successor_game_state, agent_index, depth)
             if successor_value > max_value:
                 max_value = successor_value
                 max_action = action
-        #print('Returning MAX-VALUE(',agent_index,',',depth,'): ', max_value, ' (', max_action, ')')
+        #print('  '*(depth+1) + 'Returning MAX-VALUE(',agent_index,',',depth,'): ', max_value, ' (', max_action, ')')
         return (max_value, max_action)
 
     def cutoff_test(self, game_state, depth):
@@ -257,63 +299,64 @@ class AlphaBetaMinimaxComputerAgent(ComputerAgent):
         return self.depth
 
     def get_action(self, game_state):
-        #print('Agent: ', self.get_index(), ', Board: \n', game_state.get_board())
+        #print('ALPHA-BETA-MINIMAX-DECISION>> Agent: ', self.get_index(), ', Board: \n', game_state.get_board())
         (value, action) = self.make_minimax_decision(game_state, self.get_index(), float('-inf'), float('+inf'), 0, True)
+        #print("ALPHA-BETA-MINIMAX-DECISION>> Final action: ", action)
         return action
 
     def make_minimax_decision(self, game_state, agent_index, alpha, beta, depth, first=False):
-        #print('Making ALPHA-BETA-MINIMAX-DECISION(',agent_index,',',depth,',', alpha, ',', beta) ')
+        #print('  '*(depth+1) + 'Making ALPHA-BETA-MINIMAX-DECISION(',agent_index,',',depth,',', alpha, ',', beta, ')')
         next_agent_index = 0
         if first:
             next_agent_index = agent_index
         else:
             next_agent_index = (agent_index+1) % game_state.num_agents()
         if next_agent_index == self.get_index():
-            return self.make_max_decision(game_state, next_agent_index, alpha, beta, depth)
+            return self.make_max_decision(game_state, next_agent_index, alpha, beta, depth+1)
         else:
-            return self.make_min_decision(game_state, next_agent_index, alpha, beta, depth)
+            return self.make_min_decision(game_state, next_agent_index, alpha, beta, depth+1)
 
     def make_min_decision(self, game_state, agent_index, alpha, beta, depth):
-        #print('Making ALPHA-BETA-MIN-DECISION(',agent_index,',',depth,',',alpha,',',beta,') ')
+        #print('  '*(depth+1) + 'Making MIN-DECISION(',game_state,',',agent_index,',',depth,',',alpha,',',beta,') ')
         if self.cutoff_test(game_state, depth):
-            #print('[cutoff] Returning ALPHA-BETA-MIN-VALUE(',agent_index,',',depth,',',alpha,',',beta,'): ', self.evaluation_function(game_state, self.get_index()), ' (', None, ')')
-            return (self.evaluation_function(game_state, self.get_index()), None)
+            #print('  '*(depth+1) + '[cutoff] Returning MIN-VALUE(',agent_index,',',depth,',',alpha,',',beta,'): ', self.evaluation_function(game_state, self, depth=depth), ' (', None, ')')
+            return (self.evaluation_function(game_state, self, depth=depth), None)
         min_value = float('+inf')
         min_action = None
         for action in game_state.get_legal_actions():
-            #print('ALPHA-BETA-MIN-DECISION Action: ', action)
-            #successor_game_state = game_state ##XXX
-            #successor_game_state.get_board().push_token(agent_index, action) ##XXX
+            #print('  '*(depth+1) + 'MIN-DECISION Action: ', action)
+            #XXX successor_game_state = game_state ##XXX
+            #XXX successor_game_state.get_board().push_token(agent_index, action) ##XXX
             successor_game_state = game_state.generate_successor(agent_index, action)
-            (successor_value,successor_action) = self.make_minimax_decision(successor_game_state, agent_index, alpha, beta, depth+1)
+            (successor_value,successor_action) = self.make_minimax_decision(successor_game_state, agent_index, alpha, beta, depth)
             if successor_value < min_value:
                 min_value = successor_value
                 min_action = action
-            #successor_game_state.get_board().pop_token(action) ##XXX
+            #XXX successor_game_state.get_board().pop_token(action) ##XXX
             if min_value <= alpha:
                 break
             beta = min(beta, min_value)
-        #print('Returning ALPHA-BETA-MIN-VALUE(',agent_index,',',depth,',',alpha,',',beta,'): ', min_value, ' (', min_action, ')')
+        #print('  '*(depth+1) + 'Returning MIN-VALUE(',agent_index,',',depth,',',alpha,',',beta,'): ', min_value, ' (', min_action, ')')
         return (min_value, min_action)
 
     def make_max_decision(self, game_state, agent_index, alpha, beta, depth):
-        #print('Making ALPHA-BETA-MAX-DECISION(',agent_index,',',depth,',',alpha,',',beta,') ')
+        #print('  '*(depth+1) + 'Making MAX-DECISION(',game_state,',',agent_index,',',depth,',',alpha,',',beta,') ')
         if self.cutoff_test(game_state, depth):
-            #print('[cutoff] Returning MAX-VALUE(',agent_index,',',depth,',',alpha,',',beta,'): ', self.evaluation_function(game_state, self.get_index()), ' (', None, ')')
-            return (self.evaluation_function(game_state, self.get_index()), None)
+            #print('  '*(depth+1) + '[cutoff] Returning MAX-VALUE(',agent_index,',',depth,',',alpha,',',beta,'): ', self.evaluation_function(game_state, self, depth=depth), ' (', None, ')')
+            return (self.evaluation_function(game_state, self, depth=depth), None)
         max_value = float('-inf')
         max_action = None
         for action in game_state.get_legal_actions():
-            #print('MAX-DECISION Action: ', action)
+            #print('  '*(depth+1) + 'MAX-DECISION Action: ', action)
             successor_game_state = game_state.generate_successor(agent_index, action)
-            (successor_value,successor_action) = self.make_minimax_decision(successor_game_state, agent_index, alpha, beta, depth+1)
+            (successor_value,successor_action) = self.make_minimax_decision(successor_game_state, agent_index, alpha, beta, depth)
             if successor_value > max_value:
                 max_value = successor_value
                 max_action = action
             if max_value >= beta:
                 break
             alpha = max(alpha, max_value)
-        #print('Returning MAX-VALUE(',agent_index,',',depth,',',alpha,',',beta,'): ', max_value, ' (', max_action, ')')
+        #print('  '*(depth+1) + 'Returning MAX-VALUE(',agent_index,',',depth,',',alpha,',',beta,'): ', max_value, ' (', max_action, ')')
         return (max_value, max_action)
 
     def cutoff_test(self, game_state, depth):
@@ -351,9 +394,9 @@ class ExpectimaxComputerAgent(ComputerAgent):
         return self.depth
 
     def get_action(self, game_state):
-        #print('Agent: ', self.get_index(), ', Board: \n', game_state.get_board())
+        #print('EXPECTIMAX-DECISION>> Agent: ', self.get_index(), ', Board: \n', game_state.get_board())
         (value, action) = self.make_expectimax_decision(game_state, self.get_index(), 0, True)
-        #print("Made EXPECTIMAX-DECISION: ", action)
+        #print("EXPECTIMAX-DECISION>> Final action: ", action)
         return action
 
     def make_expectimax_decision(self, game_state, agent_index, depth, first=False):
@@ -364,21 +407,21 @@ class ExpectimaxComputerAgent(ComputerAgent):
         else:
             next_agent_index = (agent_index+1) % game_state.num_agents()
         if next_agent_index == self.get_index():
-            return self.make_max_decision(game_state, next_agent_index, depth)
+            return self.make_max_decision(game_state, next_agent_index, depth+1)
         else:
-            return self.make_exp_decision(game_state, next_agent_index, depth)
+            return self.make_exp_decision(game_state, next_agent_index, depth+1)
 
     def make_exp_decision(self, game_state, agent_index, depth):
         #print('Making EXP-DECISION(',agent_index,',',depth,') ')
         if self.cutoff_test(game_state, depth):
-            #print('[cutoff] Returning EXP-VALUE(',agent_index,',',depth,'): ', self.evaluation_function(game_state, self.get_index()), ' (', None, ')')
-            return (self.evaluation_function(game_state, self.get_index()), None)
+            #print('[cutoff] Returning EXP-VALUE(',agent_index,',',depth,'): ', self.evaluation_function(game_state, self, depth=depth), ' (', None, ')')
+            return (self.evaluation_function(game_state, self, depth=depth), None)
         exp_value = 0
         exp_action = None
         for action in game_state.get_legal_actions():
             #print('EXP-DECISION Action: ', action)
             successor_game_state = game_state.generate_successor(agent_index, action)
-            (successor_value,successor_action) = self.make_expectimax_decision(successor_game_state, agent_index, depth+1)
+            (successor_value,successor_action) = self.make_expectimax_decision(successor_game_state, agent_index, depth)
             exp_value += successor_value
         exp_value /= float(len(game_state.get_legal_actions()))
         #print('Returning EXP-VALUE(',agent_index,',',depth,'): ', exp_value, ' (', exp_action, ')')
@@ -387,14 +430,14 @@ class ExpectimaxComputerAgent(ComputerAgent):
     def make_max_decision(self, game_state, agent_index, depth):
         #print('Making MAX-DECISION(',agent_index,',',depth,') ')
         if self.cutoff_test(game_state, depth):
-            #print('[cutoff] Returning MAX-VALUE(',agent_index,',',depth,'): ', self.evaluation_function(game_state, self.get_index()), ' (', None, ')')
-            return (self.evaluation_function(game_state, self.get_index()), None)
+            #print('[cutoff] Returning MAX-VALUE(',agent_index,',',depth,'): ', self.evaluation_function(game_state, self, depth=depth), ' (', None, ')')
+            return (self.evaluation_function(game_state, self, depth=depth), None)
         max_value = float('-inf')
         max_action = None
         for action in game_state.get_legal_actions():
             #print('MAX-DECISION Action: ', action)
             successor_game_state = game_state.generate_successor(agent_index, action)
-            (successor_value,successor_action) = self.make_expectimax_decision(successor_game_state, agent_index, depth+1)
+            (successor_value,successor_action) = self.make_expectimax_decision(successor_game_state, agent_index, depth)
             if successor_value > max_value:
                 max_value = successor_value
                 max_action = action
