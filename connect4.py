@@ -125,16 +125,25 @@ def parse_options():
     parser.add_argument('-l', '--layout', dest='layout', type=int, nargs=2,
                         help='A pair of two numbers specifying the width and height (in number of tiles) of the game board.', default=[7, 6])
     parser.add_argument('--timeout', dest='timeout', type=int,
-                        help='Number of seconds to wait for a player\'s move before timing out.', default=-1)
+                        help='Number of seconds to wait for a player\'s move before timing out. Setting it to zero disables the timeout', default=0)
 
     args = parser.parse_args()
 
     # We need at least two agents
     while len(args.agents) <= 1:
         args.agents.append('random')
+
     # Check arguments consistency
     if args.agents.count('custom') != len(args.agent_classes):
         parser.error('Agent class not found for "custom" agent')
+    if args.fps <= 0:
+        parser.error('Frame rate must be a positive number')
+    if any(args.geometry) <= 0:
+        parser.error('Window geometry must be a pair of positive numbers')
+    if any(args.layout) <= 0:
+        parser.error('Board layout must be a pair of positive numbers')
+    if args.timeout < 0:
+        parser.error('Timeout value must be a nonnegative number')
 
     return args
 
@@ -144,7 +153,7 @@ if __name__ == '__main__':
     #print('Command-line Arguments: ', args)
     #rng_state = ...
     #random.setstate(rng_state)
-    rng_state = random.getstate()
+    #rng_state = random.getstate()
     #print "Random State: ", rng_state
     agent_factory = AgentFactory()
     agents = []
@@ -154,8 +163,6 @@ if __name__ == '__main__':
             args.agent_class = args.agent_classes.pop(0)
         agents.append(agent_factory.make_agent(agent, agent_idx, args))
         agent_idx += 1
-    #agents = [upo.connect4.agents.RandomComputerAgent(0),
-    #          upo.connect4.agents.RandomComputerAgent(1)]
     game = upo.connect4.game.Game(agents, args.layout)
     ui = upo.connect4.ui.PyGameUI(game, args.geometry, args.fps, args.timeout)
     ui.show()
