@@ -479,6 +479,7 @@ class GameState:
         self.board = Board(layout[0], layout[1])
         self.nagents = num_agents
         #self.cur_agent = None
+        self.verbose = 0
 
     def get_board(self):
         """
@@ -820,6 +821,20 @@ class GameState:
             return self.board.get_token(x, y)
         return None
 
+    def set_verbosity_level(self, level):
+        """
+        Set the verbosity level to the given value.
+        """
+        if level < 0:
+            raise Exception('Verbosity level must be a non negative integer number')
+        self.verbose = int(level)
+
+    def get_verbosity_level(self):
+        """
+        Returns the verbosity level.
+        """
+        return self.verbose
+
     def __str__(self):
         """
         Returns a string representation of this state.
@@ -848,6 +863,7 @@ class Game:
         self.state = GameState(layout, len(agents))
         self.start_agent_idx = agents[0].get_index()
         self.cur_agent_idx = self.start_agent_idx
+        self.verbose = 0
 
     def reset(self):
         """
@@ -911,8 +927,14 @@ class Game:
         agent = self.get_current_agent()
         column = agent.get_action(self.state)
         if column != None:
-            print('Agent ', agent.get_index(), ' placed a token in column: ', column)
+            if not self.state.is_legal_action(column):
+                raise Exception('Agent ', agent.get_index(), " played an illegal move")
+            if self.get_verbosity_level() > 0:
+                print('Agent ', agent.get_index(), ' placed a token in column: ', column)
             self.state.make_move(agent.get_index(), column)
+        else:
+            if len(self.state.get_legal_actions()) > 0:
+                raise Exception('Agent ', agent.get_index(), " didn't play any move but at least one action is available")
         self.cur_agent_idx = (self.cur_agent_idx+1) % len(self.agents)
         return column
 
@@ -921,3 +943,18 @@ class Game:
         Tells if the game is over.
         """
         return self.state.is_final()
+
+    def set_verbosity_level(self, level):
+        """
+        Set the verbosity level to the given value.
+        """
+        if level < 0:
+            raise Exception('Verbosity level must be a non negative integer number')
+        self.verbose = int(level)
+        self.state.set_verbosity_level(level)
+
+    def get_verbosity_level(self):
+        """
+        Returns the verbosity level.
+        """
+        return self.verbose

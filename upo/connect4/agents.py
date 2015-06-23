@@ -27,6 +27,7 @@ class Agent:
     def __init__(self, index):
         self.idx = index
         self.name = 'Agent #' + str(index)
+        self.verbose = 0
 
     def get_action(self, game_state):
         """
@@ -46,6 +47,20 @@ class Agent:
 
     def is_interactive(self):
         return False
+
+    def set_verbosity_level(self, level):
+        """
+        Set the verbosity level to the given value.
+        """
+        if level < 0:
+            raise Exception('Verbosity level must be a non negative integer number')
+        self.verbose = int(level)
+
+    def get_verbosity_level(self):
+        """
+        Returns the verbosity level.
+        """
+        return self.verbose
 
 
 ################################################################################
@@ -191,7 +206,8 @@ class MinimaxComputerAgent(ComputerAgent):
         return self.depth
 
     def get_action(self, game_state):
-        #print('MINIMAX-DECISION>> Agent: ', self.get_index(), ', Board: \n', game_state.get_board())#XXX
+        if self.get_verbosity_level() > 1:
+            print('MINIMAX-DECISION>> Agent: ', self.get_index(), ', Board: \n', game_state.get_board())
         action = None
         if game_state.get_board().is_empty() and (game_state.get_board().width() % 2) != 0:
             # When the board is empty and has an odd number of columns,
@@ -199,11 +215,13 @@ class MinimaxComputerAgent(ComputerAgent):
             action = game_state.get_board().width()//2
         else:
             (value, action) = self.make_minimax_decision(game_state, self.get_index(), 0, True)
-        #print("MINIMAX-DECISION>> Final action: ", action)#XXX
+        if self.get_verbosity_level() > 1:
+            print("MINIMAX-DECISION>> Final action: ", action)
         return action
 
     def make_minimax_decision(self, game_state, agent_index, depth, first=False):
-        #print('  '*(depth+1) + 'Making MINIMAX-DECISION(',agent_index,',',depth,') ')#XXX
+        if self.get_verbosity_level() > 1:
+            print('  '*(depth+1) + 'Making MINIMAX-DECISION(',agent_index,',',depth,') ')
         next_agent_index = 0
         if first:
             next_agent_index = agent_index
@@ -215,37 +233,45 @@ class MinimaxComputerAgent(ComputerAgent):
             return self.make_min_decision(game_state, next_agent_index, depth+1)
 
     def make_min_decision(self, game_state, agent_index, depth):
-        #print('  '*(depth+1) + 'Making MIN-DECISION(',agent_index,',',depth,') ')#XXX
+        if self.get_verbosity_level() > 1:
+            print('  '*(depth+1) + 'Making MIN-DECISION(',agent_index,',',depth,') ')
         if self.cutoff_test(game_state, depth):
-            #print('  '*(depth+1) + '[cutoff] Returning MIN-VALUE(',agent_index,',',depth,'): ', self.evaluation_function(game_state, self, depth=depth), ' (', None, ')')#XXX
+            if self.get_verbosity_level() > 1:
+                print('  '*(depth+1) + '[cutoff] Returning MIN-VALUE(',agent_index,',',depth,'): ', self.evaluation_function(game_state, self, depth=depth), ' (', None, ')')
             return (self.evaluation_function(game_state, self, depth=depth), None)
         min_value = float('+inf')
         min_action = None
         for action in game_state.get_legal_actions():
-            #print('  '*(depth+1) + 'MIN-DECISION Action: ', action)#XXX
+            if self.get_verbosity_level() > 1:
+                print('  '*(depth+1) + 'MIN-DECISION Action: ', action)
             successor_game_state = game_state.generate_successor(agent_index, action)
             (successor_value,successor_action) = self.make_minimax_decision(successor_game_state, agent_index, depth)
             if successor_value < min_value:
                 min_value = successor_value
                 min_action = action
-        #print('  '*(depth+1) + 'Returning MIN-VALUE(',agent_index,',',depth,'): ', min_value, ' (', min_action, ')')#XXX
+        if self.get_verbosity_level() > 1:
+            print('  '*(depth+1) + 'Returning MIN-VALUE(',agent_index,',',depth,'): ', min_value, ' (', min_action, ')')
         return (min_value, min_action)
 
     def make_max_decision(self, game_state, agent_index, depth):
-        #print('  '*(depth+1) + 'Making MAX-DECISION(',agent_index,',',depth,') ')#XXX
+        if self.get_verbosity_level() > 1:
+            print('  '*(depth+1) + 'Making MAX-DECISION(',agent_index,',',depth,') ')
         if self.cutoff_test(game_state, depth):
-            #print('  '*(depth+1) + '[cutoff] Returning MAX-VALUE(',agent_index,',',depth,'): ', self.evaluation_function(game_state, self, depth=depth), ' (', None, ')')#XXX
+            if self.get_verbosity_level() > 1:
+                print('  '*(depth+1) + '[cutoff] Returning MAX-VALUE(',agent_index,',',depth,'): ', self.evaluation_function(game_state, self, depth=depth), ' (', None, ')')
             return (self.evaluation_function(game_state, self, depth=depth), None)
         max_value = float('-inf')
         max_action = None
         for action in game_state.get_legal_actions():
-            #print('  '*(depth+1) + 'MAX-DECISION Action: ', action)#XXX
+            if self.get_verbosity_level() > 1:
+                print('  '*(depth+1) + 'MAX-DECISION Action: ', action)
             successor_game_state = game_state.generate_successor(agent_index, action)
             (successor_value,successor_action) = self.make_minimax_decision(successor_game_state, agent_index, depth)
             if successor_value > max_value:
                 max_value = successor_value
                 max_action = action
-        #print('  '*(depth+1) + 'Returning MAX-VALUE(',agent_index,',',depth,'): ', max_value, ' (', max_action, ')')#XXX
+        if self.get_verbosity_level() > 1:
+            print('  '*(depth+1) + 'Returning MAX-VALUE(',agent_index,',',depth,'): ', max_value, ' (', max_action, ')')
         return (max_value, max_action)
 
     def cutoff_test(self, game_state, depth):
@@ -253,7 +279,6 @@ class MinimaxComputerAgent(ComputerAgent):
         Checks if the maximum tree depth has been reached or if the current
         node of the game tree is a terminal node.
         """
-        #if depth == self.depth*game_state.num_agents() or game_state.is_final():
         if depth == self.depth or game_state.is_final():
             return True
         return False
@@ -285,7 +310,8 @@ class AlphaBetaMinimaxComputerAgent(ComputerAgent):
         return self.depth
 
     def get_action(self, game_state):
-        #print('ALPHA-BETA-MINIMAX-DECISION>> Agent: ', self.get_index(), ', Board: \n', game_state.get_board()) #XXX
+        if self.get_verbosity_level() > 1:
+            print('ALPHA-BETA-MINIMAX-DECISION>> Agent: ', self.get_index(), ', Board: \n', game_state.get_board())
         action = None
         if game_state.get_board().is_empty() and (game_state.get_board().width() % 2) != 0:
             # When the board is empty and has an odd number of columns,
@@ -293,11 +319,13 @@ class AlphaBetaMinimaxComputerAgent(ComputerAgent):
             action = game_state.get_board().width()//2
         else:
             (value, action) = self.make_minimax_decision(game_state, self.get_index(), float('-inf'), float('+inf'), 0, True)
-        #print("ALPHA-BETA-MINIMAX-DECISION>> Final action: ", action) #XXX
+        if self.get_verbosity_level() > 1:
+            print("ALPHA-BETA-MINIMAX-DECISION>> Final action: ", action)
         return action
 
     def make_minimax_decision(self, game_state, agent_index, alpha, beta, depth, first=False):
-        #print('  '*(depth+1) + 'Making ALPHA-BETA-MINIMAX-DECISION(agent=',agent_index,',depth=',depth,',alpha=', alpha, ',beta=', beta, ')') #XXX
+        if self.get_verbosity_level() > 1:
+            print('  '*(depth+1) + 'Making ALPHA-BETA-MINIMAX-DECISION(agent=',agent_index,',depth=',depth,',alpha=', alpha, ',beta=', beta, ')')
         next_agent_index = 0
         if first:
             next_agent_index = agent_index
@@ -309,14 +337,17 @@ class AlphaBetaMinimaxComputerAgent(ComputerAgent):
             return self.make_min_decision(game_state, next_agent_index, alpha, beta, depth+1)
 
     def make_min_decision(self, game_state, agent_index, alpha, beta, depth):
-        #print('  '*(depth+1) + 'Making MIN-DECISION(',game_state,',agent=',agent_index,',depth=',depth,',alpha=',alpha,',beta=',beta,') ') #XXX
+        if self.get_verbosity_level() > 1:
+            print('  '*(depth+1) + 'Making MIN-DECISION(',game_state,',agent=',agent_index,',depth=',depth,',alpha=',alpha,',beta=',beta,') ')
         if self.cutoff_test(game_state, depth):
-            #print('  '*(depth+1) + '[cutoff] Returning MIN-VALUE(agent=',agent_index,',depth=',depth,',alpha=',alpha,',beta=',beta,'): ', self.evaluation_function(game_state, self, depth=depth), ' (', None, ')') #XXX
+            if self.get_verbosity_level() > 1:
+                print('  '*(depth+1) + '[cutoff] Returning MIN-VALUE(agent=',agent_index,',depth=',depth,',alpha=',alpha,',beta=',beta,'): ', self.evaluation_function(game_state, self, depth=depth), ' (', None, ')')
             return (self.evaluation_function(game_state, self, depth=depth), None)
         min_value = float('+inf')
         min_action = None
         for action in game_state.get_legal_actions():
-            #print('  '*(depth+1) + 'MIN-DECISION Action: ', action)
+            if self.get_verbosity_level() > 1:
+                print('  '*(depth+1) + 'MIN-DECISION Action: ', action)
             successor_game_state = game_state.generate_successor(agent_index, action)
             (successor_value,successor_action) = self.make_minimax_decision(successor_game_state, agent_index, alpha, beta, depth)
             if successor_value < min_value:
@@ -325,18 +356,22 @@ class AlphaBetaMinimaxComputerAgent(ComputerAgent):
             if min_value <= alpha:
                 break
             beta = min(beta, min_value)
-        #print('  '*(depth+1) + 'Returning MIN-VALUE(agent=',agent_index,',depth=',depth,',alpha=',alpha,',beta=',beta,'): ', min_value, ' (', min_action, ')') #XXX
+        if self.get_verbosity_level() > 1:
+            print('  '*(depth+1) + 'Returning MIN-VALUE(agent=',agent_index,',depth=',depth,',alpha=',alpha,',beta=',beta,'): ', min_value, ' (', min_action, ')')
         return (min_value, min_action)
 
     def make_max_decision(self, game_state, agent_index, alpha, beta, depth):
-        #print('  '*(depth+1) + 'Making MAX-DECISION(',game_state,',agent=',agent_index,',depth=',depth,',alpha=',alpha,',beta=',beta,') ') #XXX
+        if self.get_verbosity_level() > 1:
+            print('  '*(depth+1) + 'Making MAX-DECISION(',game_state,',agent=',agent_index,',depth=',depth,',alpha=',alpha,',beta=',beta,') ')
         if self.cutoff_test(game_state, depth):
-            #print('  '*(depth+1) + '[cutoff] Returning MAX-VALUE(agent=',agent_index,',depth=',depth,',alpha=',alpha,',beta=',beta,'): ', self.evaluation_function(game_state, self, depth=depth), ' (', None, ')') #XXX
+            if self.get_verbosity_level() > 1:
+                print('  '*(depth+1) + '[cutoff] Returning MAX-VALUE(agent=',agent_index,',depth=',depth,',alpha=',alpha,',beta=',beta,'): ', self.evaluation_function(game_state, self, depth=depth), ' (', None, ')')
             return (self.evaluation_function(game_state, self, depth=depth), None)
         max_value = float('-inf')
         max_action = None
         for action in game_state.get_legal_actions():
-            #print('  '*(depth+1) + 'MAX-DECISION Action: ', action) #XXX
+            if self.get_verbosity_level() > 1:
+                print('  '*(depth+1) + 'MAX-DECISION Action: ', action)
             successor_game_state = game_state.generate_successor(agent_index, action)
             (successor_value,successor_action) = self.make_minimax_decision(successor_game_state, agent_index, alpha, beta, depth)
             if successor_value > max_value:
@@ -345,7 +380,8 @@ class AlphaBetaMinimaxComputerAgent(ComputerAgent):
             if max_value >= beta:
                 break
             alpha = max(alpha, max_value)
-        #print('  '*(depth+1) + 'Returning MAX-VALUE(agent=',agent_index,',depth=',depth,',alpha=',alpha,',beta=',beta,'): ', max_value, ' (', max_action, ')') #XXX
+        if self.get_verbosity_level() > 1:
+            print('  '*(depth+1) + 'Returning MAX-VALUE(agent=',agent_index,',depth=',depth,',alpha=',alpha,',beta=',beta,'): ', max_value, ' (', max_action, ')')
         return (max_value, max_action)
 
     def cutoff_test(self, game_state, depth):
@@ -382,7 +418,8 @@ class ExpectimaxComputerAgent(ComputerAgent):
         return self.depth
 
     def get_action(self, game_state):
-        #print('EXPECTIMAX-DECISION>> Agent: ', self.get_index(), ', Board: \n', game_state.get_board())#XXX
+        if self.get_verbosity_level() > 1:
+            print('EXPECTIMAX-DECISION>> Agent: ', self.get_index(), ', Board: \n', game_state.get_board())
         action = None
         if game_state.get_board().is_empty() and (game_state.get_board().width() % 2) != 0:
             # When the board is empty and has an odd number of columns,
@@ -390,11 +427,13 @@ class ExpectimaxComputerAgent(ComputerAgent):
             action = game_state.get_board().width()//2
         else:
             (value, action) = self.make_expectimax_decision(game_state, self.get_index(), 0, True)
-        #print("EXPECTIMAX-DECISION>> Final action: ", action)#XXX
+        if self.get_verbosity_level() > 1:
+            print("EXPECTIMAX-DECISION>> Final action: ", action)
         return action
 
     def make_expectimax_decision(self, game_state, agent_index, depth, first=False):
-        #print('  '*(depth+1) + 'Making EXPECTIMAX-DECISION(agent=',agent_index,',depth=',depth,') ')#XXX
+        if self.get_verbosity_level() > 1:
+            print('  '*(depth+1) + 'Making EXPECTIMAX-DECISION(agent=',agent_index,',depth=',depth,') ')
         next_agent_index = 0
         if first:
             next_agent_index = agent_index
@@ -406,36 +445,44 @@ class ExpectimaxComputerAgent(ComputerAgent):
             return self.make_exp_decision(game_state, next_agent_index, depth+1)
 
     def make_exp_decision(self, game_state, agent_index, depth):
-        #print('  '*(depth+1) + 'Making EXP-DECISION(agent=',agent_index,',depth=',depth,') ')#XXX
+        if self.get_verbosity_level() > 1:
+            print('  '*(depth+1) + 'Making EXP-DECISION(agent=',agent_index,',depth=',depth,') ')
         if self.cutoff_test(game_state, depth):
-            #print('  '*(depth+1) + '[cutoff] Returning EXP-VALUE(agent=',agent_index,',depth=',depth,'): ', self.evaluation_function(game_state, self, depth=depth), ' (', None, ')')#XXX
+            if self.get_verbosity_level() > 1:
+                print('  '*(depth+1) + '[cutoff] Returning EXP-VALUE(agent=',agent_index,',depth=',depth,'): ', self.evaluation_function(game_state, self, depth=depth), ' (', None, ')')
             return (self.evaluation_function(game_state, self, depth=depth), None)
         exp_value = 0
         exp_action = None
         for action in game_state.get_legal_actions():
-            #print('  '*(depth+1) + 'EXP-DECISION Action: ', action)
+            if self.get_verbosity_level() > 1:
+                print('  '*(depth+1) + 'EXP-DECISION Action: ', action)
             successor_game_state = game_state.generate_successor(agent_index, action)
             (successor_value,successor_action) = self.make_expectimax_decision(successor_game_state, agent_index, depth)
             exp_value += successor_value
         exp_value /= float(len(game_state.get_legal_actions()))
-        #print('  '*(depth+1) + 'Returning EXP-VALUE(agent=',agent_index,',depth=',depth,'): ', exp_value, ' (', exp_action, ')')#XXX
+        if self.get_verbosity_level() > 1:
+            print('  '*(depth+1) + 'Returning EXP-VALUE(agent=',agent_index,',depth=',depth,'): ', exp_value, ' (', exp_action, ')')
         return (exp_value, exp_action)
 
     def make_max_decision(self, game_state, agent_index, depth):
-        #print('  '*(depth+1) + 'Making MAX-DECISION(agent=',agent_index,',',depth,') ')#XXX
+        if self.get_verbosity_level() > 1:
+            print('  '*(depth+1) + 'Making MAX-DECISION(agent=',agent_index,',',depth,') ')
         if self.cutoff_test(game_state, depth):
-            #print('  '*(depth+1) + '[cutoff] Returning MAX-VALUE(agent=',agent_index,',depth=',depth,'): ', self.evaluation_function(game_state, self, depth=depth), ' (', None, ')')#XXX
+            if self.get_verbosity_level() > 1:
+                print('  '*(depth+1) + '[cutoff] Returning MAX-VALUE(agent=',agent_index,',depth=',depth,'): ', self.evaluation_function(game_state, self, depth=depth), ' (', None, ')')
             return (self.evaluation_function(game_state, self, depth=depth), None)
         max_value = float('-inf')
         max_action = None
         for action in game_state.get_legal_actions():
-            #print('  '*(depth+1) + 'MAX-DECISION Action: ', action)#XXX
+            if self.get_verbosity_level() > 1:
+                print('  '*(depth+1) + 'MAX-DECISION Action: ', action)
             successor_game_state = game_state.generate_successor(agent_index, action)
             (successor_value,successor_action) = self.make_expectimax_decision(successor_game_state, agent_index, depth)
             if successor_value > max_value:
                 max_value = successor_value
                 max_action = action
-        #print('  '*(depth+1) + 'Returning MAX-VALUE(agent=',agent_index,',depth=',depth,'): ', max_value, ' (', max_action, ')')#XXX
+        if self.get_verbosity_level() > 1:
+            print('  '*(depth+1) + 'Returning MAX-VALUE(agent=',agent_index,',depth=',depth,'): ', max_value, ' (', max_action, ')')
         return (max_value, max_action)
 
     def cutoff_test(self, game_state, depth):
@@ -446,5 +493,3 @@ class ExpectimaxComputerAgent(ComputerAgent):
         if depth == self.depth or game_state.is_final():
             return True
         return False
-
-

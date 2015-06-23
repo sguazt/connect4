@@ -120,6 +120,8 @@ def parse_options():
                         help='A pair of two numbers specifying the width and height (in number of tiles) of the game board.', default=[7, 6])
     parser.add_argument('--timeout', dest='timeout', type=int,
                         help='Number of seconds to wait for a player\'s move before timing out. Setting it to zero disables the timeout', default=0)
+    parser.add_argument('--verbose', '-v', action='count',
+                        help='Increase output verbosity', default=0)
 
     args = parser.parse_args()
 
@@ -152,11 +154,11 @@ if __name__ == '__main__':
     agent_factory = AgentFactory()
     agents = []
     agent_idx = 0
-    for agent in args.agents:
+    for agent_type in args.agents:
         xargs = {}
         #xargs['depth'] = GameDifficulty.str2int(args.difficulty)
         xargs['depth'] = args.difficulty
-        if agent == 'custom':
+        if agent_type == 'custom':
             agent_args = args.agent_args.pop(0)
             for arg in agent_args:
                 (key, value) = arg.split('=', 1) # Retrieves the key and the value
@@ -164,8 +166,11 @@ if __name__ == '__main__':
             if 'class' not in xargs:
                 raise Exception('Class name not specified for custom agent')
         xargs['depth'] = int(GameDifficulty.str2int(xargs['depth']))*len(args.agents)
-        agents.append(agent_factory.make_agent(agent, agent_idx, xargs))
+        agent = agent_factory.make_agent(agent_type, agent_idx, xargs)
+        agent.set_verbosity_level(args.verbose)
+        agents.append(agent)
         agent_idx += 1
     game = upo.connect4.game.Game(agents, args.layout)
+    game.set_verbosity_level(args.verbose)
     ui = upo.connect4.ui.PyGameUI(game, args.geometry, args.fps, args.timeout)
     ui.show()

@@ -33,7 +33,7 @@ class FirstFitRightComputerAgent(upo.connect4.agents.ComputerAgent):
 ################################################################################
 
 
-class EnhancedRandomComputerAngent(upo.connect4.agents.ComputerAgent):
+class EnhancedRandomComputerAgent(upo.connect4.agents.ComputerAgent):
     """
     A smart computer-controlled agent that chooses its actions at
     random.
