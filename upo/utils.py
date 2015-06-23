@@ -15,6 +15,7 @@
 # limitations under the License.
 
 
+import importlib
 import inspect
 import sys
 
@@ -27,3 +28,23 @@ def raise_undefined_method():
     print('[ERROR] Method not implemented: %s at line %s of %s' % (method, line, fileName))
     sys.exit(1)
 
+
+def import_lib(lib):
+    """
+    Dynamically import a library symbol (e.g., a class, a function) whose fully qualified name is given as argument.
+    """
+    #-- Alternative #1
+    #parts = lib.split('.')
+    #module = ".".join(parts[:-1])
+    #m = importlib.__import__(module)
+    #for comp in parts[1:]:
+    #    m = getattr(m, comp)
+    #return m
+    #-- Alternative #2
+    # Extracts the symbol name 
+    d = lib.rfind(".")
+    lib_name = lib[d+1:len(lib)]
+    # Import the module
+    #module = importlib.__import__(sym[0:d], globals(), locals(), [lib_name])
+    module = importlib.import_module(lib[0:d])
+    return getattr(module, lib_name)

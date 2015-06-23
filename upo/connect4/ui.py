@@ -56,7 +56,8 @@ class PyGameUI(GameUI):
         self.legend_font = None
         self.bg_color = (255, 255, 255) # white
         self.fg_color = (128, 128, 128) # gray
-        self.column_highlight_color = (0, 255, 0) # green
+        #self.column_highlight_color = (0, 255, 0) # green
+        self.column_highlight_color = (0, 255, 255) # cyan
         self.board_color = (0, 0, 0) # black
         #self.top_row_color = (0, 255, 255) # cyan
         if game.num_agents() > 2:
@@ -262,7 +263,7 @@ class PyGameUI(GameUI):
         """
         (c, r) = self.screen_to_board_coords(pos)
         (x, y) = self.board_to_screen_coords((c, r))
-        pygame.draw.rect(self.display, self.column_highlight_color, (x-2, self.board_rect.top-2, self.tile_size+2, self.board_rect.height+2), 2)
+        pygame.draw.rect(self.display, self.column_highlight_color, (x-1, self.board_rect.top-2, self.tile_size+2, self.board_rect.height+2), 2)
 
     def blink_winning_tokens(self, winning_cells):
         """

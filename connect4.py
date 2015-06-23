@@ -17,33 +17,12 @@
 
 import argparse
 import enum
-import importlib
+import inspect
 import random
 import upo.connect4.agents
 import upo.connect4.game
 import upo.connect4.ui
-
-
-
-def import_class(klass):
-    """
-    Dynamically import a class whose fully qualified name is given as argument.
-    """
-    #-- Alternative #1
-    #parts = klass.split('.')
-    #module = ".".join(parts[:-1])
-    #m = importlib.__import__(module)
-    #for comp in parts[1:]:
-    #    m = getattr(m, comp)
-    #return m
-    #-- Alternative #2
-    # Extracts the class name 
-    d = klass.rfind(".")
-    class_name = klass[d+1:len(klass)]
-    # Import the module
-    #module = importlib.__import__(klass[0:d], globals(), locals(), [class_name])
-    module = importlib.import_module(klass[0:d])
-    return getattr(module, class_name)
+import upo.utils
 
 
 class GameDifficulty(enum.IntEnum):
@@ -85,24 +64,26 @@ class GameDifficulty(enum.IntEnum):
 
 
 class AgentFactory:
-    ids = ['alphabeta', 'custom', 'expectimax', 'firstfit', 'human', 'minimax', 'random']
+    ids = ['alphabeta', 'custom', 'expectimax', 'firstfitleft', 'human', 'minimax', 'random']
 
     def make_agent(self, agent_id, agent_index, args):
         #if agent_id not in self.ids:
         #    raise Exception('Unknown agent identifier "' + agent_id + '"')
         if agent_id == 'alphabeta':
-            return upo.connect4.agents.AlphaBetaMinimaxComputerAgent(agent_index, GameDifficulty.str2int(args.difficulty))
+            return upo.connect4.agents.AlphaBetaMinimaxComputerAgent(agent_index, args['depth'])
         if agent_id == 'custom':
-            klass = import_class(args.agent_class)
-            return klass(agent_index)
-        if agent_id == 'firstfit':
-            return upo.connect4.agents.FirstFitComputerAgent(agent_index)
+            klass = upo.utils.import_lib(args['class'])
+            if len(inspect.signature(klass.__init__).parameters) <= 2:
+                return klass(agent_index)
+            return klass(agent_index, **args)
+        if agent_id == 'firstfitleft':
+            return upo.connect4.agents.FirstFitLeftComputerAgent(agent_index)
         if agent_id == 'expectimax':
-            return upo.connect4.agents.ExpectimaxComputerAgent(agent_index, GameDifficulty.str2int(args.difficulty))
+            return upo.connect4.agents.ExpectimaxComputerAgent(agent_index, args['depth'])
         if agent_id == 'human':
             return upo.connect4.agents.HumanAgent(agent_index)
         if agent_id == 'minimax':
-            return upo.connect4.agents.MinimaxComputerAgent(agent_index, GameDifficulty.str2int(args.difficulty))
+            return upo.connect4.agents.MinimaxComputerAgent(agent_index, args['depth'])
         if agent_id == 'random':
             return upo.connect4.agents.RandomComputerAgent(agent_index)
 
@@ -117,8 +98,18 @@ def parse_options():
     parser.add_argument('-a', '--agent', action='append', dest='agents',
                         choices=AgentFactory.get_available_agents(),
                         help='The type of a player agent.', default=[])
-    parser.add_argument('--agentclass', action='append', dest='agent_classes', type=str,
-                        help='The fully qualified class name of the custom agent (e.g., upo.connect4.agents.MyAgent); only used when the agent type is "custom" (see option "--agent").', default=[])
+    #parser.add_argument('--agentclass', action='append', dest='agent_classes', type=str,
+    #                    help='The fully qualified class name of the custom agent (e.g., upo.connect4.agents.MyAgent); only used when the agent type is "custom" (see option "--agent").', default=[])
+    parser.add_argument('--agentargs', action='append', dest='agent_args', type=str, nargs="*",
+                        help='The arguments to pass to the associated "custom" agent.'
+                            +'Specify as many parameters you need in the form of a space-separated sequence of "key=value" elements; for instance, "--agentargs key1=value1 key2=value2 ... keyN=valueN".'
+                            +'The following keys are available:'
+                            +'"class": the value is the fully qualified class name of the custom agent (e.g., upo.connect4.agents.MyAgent);'
+                            +'"depth": the maximum depth in the game tree where stopping the search (same as "--difficulty" option, but specific for a given agent);'
+                            +'"evalfunc": the fully qualified function name of the evaluation function to use for evaluating nodes of the game tree.'
+                            +'There must be at least one parameter whose key is "class"'
+                            +'Only used when the agent type is "custom" (see option "--agent").'
+                            +'Repeat this option for each "custom" agent.', default=[])
     parser.add_argument('-d', '--difficulty', dest='difficulty', type=str,
                         help='The level of difficulty of the game (valid only for intelligent computer agents.', default=str(GameDifficulty.default_difficulty))
     parser.add_argument('--fps', dest='fps', type=int,
@@ -137,8 +128,8 @@ def parse_options():
         args.agents.append('random')
 
     # Check arguments consistency
-    if args.agents.count('custom') != len(args.agent_classes):
-        parser.error('Agent class not found for "custom" agent')
+    if args.agents.count('custom') != len(args.agent_args):
+        parser.error('Agent arguments not found for "custom" agent')
     if args.fps <= 0:
         parser.error('Frame rate must be a positive number')
     if any(args.geometry) <= 0:
@@ -162,9 +153,18 @@ if __name__ == '__main__':
     agents = []
     agent_idx = 0
     for agent in args.agents:
+        xargs = {}
+        #xargs['depth'] = GameDifficulty.str2int(args.difficulty)
+        xargs['depth'] = args.difficulty
         if agent == 'custom':
-            args.agent_class = args.agent_classes.pop(0)
-        agents.append(agent_factory.make_agent(agent, agent_idx, args))
+            agent_args = args.agent_args.pop(0)
+            for arg in agent_args:
+                (key, value) = arg.split('=', 1) # Retrieves the key and the value
+                xargs[key.lower()] = value
+            if 'class' not in xargs:
+                raise Exception('Class name not specified for custom agent')
+        xargs['depth'] = int(GameDifficulty.str2int(xargs['depth']))*len(args.agents)
+        agents.append(agent_factory.make_agent(agent, agent_idx, xargs))
         agent_idx += 1
     game = upo.connect4.game.Game(agents, args.layout)
     ui = upo.connect4.ui.PyGameUI(game, args.geometry, args.fps, args.timeout)

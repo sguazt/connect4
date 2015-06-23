@@ -142,32 +142,35 @@ class GridBoard:
         """
         return self.data.height() - self.to_impl_row(self.get_column_empty_row(column)) + 1
 
-    def is_full(self):
-        """
-        Tells if this board is full of tokens.
-        """
-        for x in range(self.data.width()):
-            if self.data[x][0] == self.INVALID_TOKEN:
-                return False
-        return True
-
     def is_column_full(self, column):
         """
         Tells if the given column is full of tokens.
         """
         return self.data[column][0] != self.INVALID_TOKEN
 
-    def is_empty(self):
+    def is_full(self):
         """
-        Tells if this board has no token
+        Tells if this board is full of tokens.
         """
-        return self.data.count(self.INVALID_TOKEN) == self.data.size()
+        for c in range(self.data.width()):
+            if not self.is_column_full(c):
+                return False
+        return True
 
     def is_column_empty(self, column):
         """
         Tells if the given column is empty.
         """
         return self.data[column].count(self.INVALID_TOKEN) == self.height()
+
+    def is_empty(self):
+        """
+        Tells if this board has no token
+        """
+        for c in range(self.data.width()):
+            if not self.is_column_empty(c):
+                return False
+        return True
 
     def clear(self):
         """
@@ -348,44 +351,66 @@ class StackBoard:
         """
         return len(self.data[column])
 
+    def is_column_full(self, column):
+        """
+        Tells if the given column is full of tokens.
+        """
+        return len(self.data[column]) == self.h
+
     def is_full(self):
         """
         Tells if this board is full of tokens.
         """
         for c in range(self.w):
-            if len(self.data[c]) < self.h:
+            if not self.is_column_full(c):
                 return False
         return True
-
-    def is_column_full(self, column):
-        """
-        Tells if the given column is full of tokens.
-        """
-        return len(self.data[column]) < self.h
-
-    def is_empty(self):
-        """
-        Tells if this board has no token
-        """
-        return not self.is_full()
 
     def is_column_empty(self, column):
         """
         Tells if the given column is empty.
         """
-        return not self.is_column_full(column)
+        return len(self.data[column]) == 0
+
+    def is_empty(self):
+        """
+        Tells if this board has no token
+        """
+        for c in range(self.w):
+            if not self.is_column_empty(c):
+                return False
+        return True
 
     def clear(self):
         """
         Clears the whole board.
         """
-        self.data = [[]]*self.w
+        #self.data = [[]]*self.w
+        self.data = [[] for i in range(self.w)]
 
     def __str__(self):
         """
         Creates a string representation of this board.
         """
-        return str(self.data)
+        #return str(self.data)
+        w = -1
+        for x in range(self.w):
+            for y in range(self.h):
+                elem_len = 1
+                if self.has_token(x, y):
+                    elem_len = len(str(self.get_token(x, y)))
+                w = max(w, elem_len)
+        out = [['{:>{width}}'.format(str(self.get_token(x,y) if self.has_token(x,y) else ' '), width=w) for x in range(self.w)] for y in range(self.h)]
+        s = ''
+        for x in out:
+            s += '\n['
+            s += ' '.join(x)
+            s += ']'
+        #s =  '\n['.join([' '.join(x)+']' for x in out])
+        s += '\n-' + '--'*w*self.w
+        s += '\n ' + ' '.join(['{:>{width}}'.format(x, width=w) for x in range(self.w)]) + '\n'
+        return s
+
 
     def to_user_row(self, impl_row):
         """
@@ -453,6 +478,7 @@ class GameState:
     def __init__(self, layout, num_agents):
         self.board = Board(layout[0], layout[1])
         self.nagents = num_agents
+        #self.cur_agent = None
 
     def get_board(self):
         """
@@ -506,7 +532,7 @@ class GameState:
         new_state = GameState(self.get_layout(), self.nagents)
         new_state.board = self.board.deep_copy()
         new_state.nagents = self.nagents
-        new_state.board.push_token(agent_index, action)
+        new_state.make_move(agent_index, action)
 
         return new_state
 
@@ -515,12 +541,16 @@ class GameState:
         Applies the given action in the current state.
         """
         self.board.push_token(agent_index, action)
+        #self.cur_agent = agent_index
 
     def unmake_move(self, action):
         """
         Undo the given action in the current state.
         """
         self.board.pop_token(action)
+
+    #def get_current_agent(self):
+    #    return self.cur_agent
 
     def get_winner_positions(self):
         """
@@ -622,6 +652,29 @@ class GameState:
                             break
                         pos.append((x,yy))
                     break;
+                # check right diagonal '/' pattern
+                if (x >= 3 and
+                    y < (self.board.height()-3) and
+                    self.board.get_token(x-1, y+1) == token and
+                    self.board.get_token(x-2, y+2) == token and
+                    self.board.get_token(x-3, y+3) == token):
+                    pos = [(x,y), (x-1,y+1), (x-2,y+2), (x-3,y+3)]
+                    # check for more than 4 tokens
+                    k0 = 4
+                    k1 = min((x-3), self.board.height()-(y+4)) + k0
+                    for k in range(k0, k1):
+                        (xx, yy) = (x-k, y+k)
+                        if self.board.get_token(xx, yy) != token:
+                            break
+                        pos.append((xx,yy))
+                    k0 = min(self.board.width()-x, y)-1
+                    k1 = -1
+                    for k in range(k0, k1, -1):
+                        (xx, yy) = (x+k, y-k)
+                        if self.board.get_token(xx, yy) != token:
+                            break
+                        pos.append((xx,yy))
+                    break;
             if len(pos) > 0:
                 break
         return pos
@@ -652,13 +705,13 @@ class GameState:
                     self.board.get_token(x+2, y) in [token, self.board.INVALID_TOKEN] and
                     self.board.get_token(x+3, y) in [token, self.board.INVALID_TOKEN]):
                     return True
-                # check right diagonal '/' pattern
-                if (y >= 3 and
-                    self.board.get_token(x+1, y-1) in [token, self.board.INVALID_TOKEN] and
-                    self.board.get_token(x+2, y-2) in [token, self.board.INVALID_TOKEN] and
-                    self.board.get_token(x+3, y-3) in [token, self.board.INVALID_TOKEN]):
-                    return True
-                ## check left diagonal '\' pattern
+                ## check right diagonal '/' pattern
+                #if (y >= 3 and
+                #    self.board.get_token(x+1, y-1) in [token, self.board.INVALID_TOKEN] and
+                #    self.board.get_token(x+2, y-2) in [token, self.board.INVALID_TOKEN] and
+                #    self.board.get_token(x+3, y-3) in [token, self.board.INVALID_TOKEN]):
+                #    return True
+                # check left diagonal '\' pattern
                 if (y < (self.board.height()-3) and
                     self.board.get_token(x+1, y+1) in [token, self.board.INVALID_TOKEN] and
                     self.board.get_token(x+2, y+2) in [token, self.board.INVALID_TOKEN] and
@@ -670,6 +723,13 @@ class GameState:
                 self.board.get_token(x, y+2) in [token, self.board.INVALID_TOKEN] and
                 self.board.get_token(x, y+3) in [token, self.board.INVALID_TOKEN]):
                 return True
+            # check right diagonal '/' pattern
+            if x >= 3 and y < (self.board.height()-3):
+                # check horizontal '-' pattern
+                if (self.board.get_token(x-1, y+1) in [token, self.board.INVALID_TOKEN] and
+                    self.board.get_token(x-2, y+2) in [token, self.board.INVALID_TOKEN] and
+                    self.board.get_token(x-3, y+3) in [token, self.board.INVALID_TOKEN]):
+                    return True
         return False
 
     def is_win(self):
@@ -687,12 +747,12 @@ class GameState:
                         self.board.get_token(x+2, y) == token and
                         self.board.get_token(x+3, y) == token):
                         return True
-                    # check right diagonal '/' pattern
-                    if (y >= 3 and
-                        self.board.get_token(x+1, y-1) == token and
-                        self.board.get_token(x+2, y-2) == token and
-                        self.board.get_token(x+3, y-3) == token):
-                        return True
+                    ## check right diagonal '/' pattern
+                    #if (y >= 3 and
+                    #    self.board.get_token(x+1, y-1) == token and
+                    #    self.board.get_token(x+2, y-2) == token and
+                    #    self.board.get_token(x+3, y-3) == token):
+                    #    return True
                     ## check left diagonal '\' pattern
                     if (y < (self.board.height()-3) and
                         self.board.get_token(x+1, y+1) == token and
@@ -705,6 +765,13 @@ class GameState:
                     self.board.get_token(x, y+2) == token and
                     self.board.get_token(x, y+3) == token):
                     return True
+                # check left diagonal '\' pattern
+                if x >= 3:
+                    if (y < (self.board.height()-3) and
+                        self.board.get_token(x-1, y+1) == token and
+                        self.board.get_token(x-2, y+2) == token and
+                        self.board.get_token(x-3, y+3) == token):
+                        return True
         return False
 
 
