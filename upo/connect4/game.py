@@ -16,6 +16,7 @@
 
 
 import copy
+import time
 import upo.containers
 
 
@@ -503,7 +504,7 @@ class GameState:
         """
         Tells if in the current state it is valid to perform the given action.
         """
-        return self.board.can_push_token(action)
+        return not self.is_final() and self.board.can_push_token(action)
 
     def get_legal_actions(self):
         """
@@ -845,6 +846,34 @@ class GameState:
 ################################################################################
 
 
+class GameStats:
+    NUM_MOVES_KEY = 'nmoves'
+    TIMINGS_KEY = 'timings'
+    NUM_EXPANDED_STATES_KEY = 'nstates'
+
+    def __init__(self, num_agents):
+        self.stats = []
+        for i in range(num_agents):
+            self.stats.append({self.NUM_MOVES_KEY: 0, self.TIMINGS_KEY: [], self.NUM_EXPANDED_STATES_KEY: 0})
+
+    def collect(self, agent_index, action, elapsed, num_states = -1):
+        self.stats[agent_index][self.NUM_MOVES_KEY] += 1
+        self.stats[agent_index][self.TIMINGS_KEY].append(elapsed)
+        self.stats[agent_index][self.NUM_EXPANDED_STATES_KEY] += 1
+
+    def get_tot_num_moves(self, agent_index):
+        return self.stats[agent_index][self.NUM_MOVES_KEY]
+
+    def get_tot_elapsed_time(self, agent_index):
+        return sum(self.stats[agent_index][self.TIMINGS_KEY])
+
+    def get_tot_expanded_states(self, agent_index):
+        return self.stats[agent_index][self.NUM_EXPANDED_STATES_KEY]
+
+
+################################################################################
+
+
 class Game:
     """
     Provides the logic to play to the Connect 4 game.
@@ -864,6 +893,7 @@ class Game:
         self.start_agent_idx = agents[0].get_index()
         self.cur_agent_idx = self.start_agent_idx
         self.verbose = 0
+        self.stats = GameStats(len(agents))
 
     def reset(self):
         """
@@ -871,6 +901,7 @@ class Game:
         """
         self.state = GameState(self.get_layout(), self.num_agents())
         self.cur_agent_idx = self.start_agent_idx
+        self.stats = GameStats(self.num_agents())
 
     def get_state(self):
         """
@@ -925,7 +956,9 @@ class Game:
         passes the turn to the next agent.
         """
         agent = self.get_current_agent()
+        start_ts = time.time()
         column = agent.get_action(self.state)
+        elapsed_time = time.time()-start_ts
         if column != None:
             if not self.state.is_legal_action(column):
                 raise Exception('Agent ', agent.get_index(), " played an illegal move")
@@ -935,6 +968,10 @@ class Game:
         else:
             if len(self.state.get_legal_actions()) > 0:
                 raise Exception('Agent ', agent.get_index(), " didn't play any move but at least one action is available")
+        num_states = -1
+        if agent.num_expanded_states:
+            num_states = agent.num_expanded_states()-self.stats.get_tot_expanded_states(agent.get_index())
+        self.stats.collect(agent.get_index(), column, elapsed_time, num_states)
         self.cur_agent_idx = (self.cur_agent_idx+1) % len(self.agents)
         return column
 
@@ -958,3 +995,6 @@ class Game:
         Returns the verbosity level.
         """
         return self.verbose
+
+    def get_stats(self):
+        return self.stats
