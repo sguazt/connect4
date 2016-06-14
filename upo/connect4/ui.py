@@ -150,6 +150,7 @@ class PyGameUI(GameUI):
                                 column_highlight = False
                 # Plays the game
                 move_timer_count = 0
+                timeout_agent = self.game.get_current_agent() # Save current agent to be used in case of timeout. This is needed since for computer agent a timeout can be discovered only after the move has been done; but at this time, the current agent is changed to the next agent
                 if not wait_interaction:
                     if not game_over:
                         agent_move_clock = None
@@ -177,7 +178,8 @@ class PyGameUI(GameUI):
                         timer_value = 0
                     if timer_value == 0:
                         game_over = True
-                        print("Timed out! " + self.game.get_current_agent().get_name() + " loses!")
+                        #print("Timed out! " + self.game.get_current_agent().get_name() + " loses!")
+                        print("Timed out! " + timeout_agent.get_name() + " loses!")
                     timer_count += 1
  
             ## BEGIN DRAWING
