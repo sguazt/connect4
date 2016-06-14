@@ -856,10 +856,10 @@ class GameStats:
         for i in range(num_agents):
             self.stats.append({self.NUM_MOVES_KEY: 0, self.TIMINGS_KEY: [], self.NUM_EXPANDED_STATES_KEY: 0})
 
-    def collect(self, agent_index, action, elapsed, num_states = -1):
+    def collect(self, agent_index, action, elapsed, num_states = 0):
         self.stats[agent_index][self.NUM_MOVES_KEY] += 1
         self.stats[agent_index][self.TIMINGS_KEY].append(elapsed)
-        self.stats[agent_index][self.NUM_EXPANDED_STATES_KEY] += 1
+        self.stats[agent_index][self.NUM_EXPANDED_STATES_KEY] += num_states
 
     def get_tot_num_moves(self, agent_index):
         return self.stats[agent_index][self.NUM_MOVES_KEY]
@@ -969,7 +969,7 @@ class Game:
             if len(self.state.get_legal_actions()) > 0:
                 raise Exception('Agent ', agent.get_index(), " didn't play any move but at least one action is available")
         num_states = -1
-        if agent.num_expanded_states:
+        if 'num_expanded_states' in dir(agent):
             num_states = agent.num_expanded_states()-self.stats.get_tot_expanded_states(agent.get_index())
         self.stats.collect(agent.get_index(), column, elapsed_time, num_states)
         self.cur_agent_idx = (self.cur_agent_idx+1) % len(self.agents)

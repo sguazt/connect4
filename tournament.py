@@ -44,10 +44,12 @@ def play_schedule(schedule):
 
         evalfunc1 = upo.utils.import_lib(match[0])
         evalfunc2 = upo.utils.import_lib(match[1])
-        win_stats = {match[0]: {'count': 0, 'nmoves': 0, 'nstates': 0, 'timings': 0}, match[1]: {'count': 0, 'nmoves': 0, 'nstates': 0, 'timings': 0}}
 
         nrun = 4
         depth = 4
+        match_winners = []
+        match_stats = {match[0]: {'win_count': 0, 'nmoves': 0, 'nstates': 0, 'timings': 0},
+                       match[1]: {'win_count': 0, 'nmoves': 0, 'nstates': 0, 'timings': 0}}
         for r in range(nrun):
             agents = []
             red_agent = yellow_agent = None
@@ -69,15 +71,18 @@ def play_schedule(schedule):
             game = upo.connect4.game.Game(agents, (7,6))
             while not game.is_over():
                 game.make_move()
+            match_stats[red_agent.get_name()]['nmoves'] += game.get_stats().get_tot_num_moves(red_agent.get_index())
+            match_stats[red_agent.get_name()]['nstates'] += game.get_stats().get_tot_expanded_states(red_agent.get_index())
+            match_stats[red_agent.get_name()]['timings'] += game.get_stats().get_tot_elapsed_time(red_agent.get_index())
+            match_stats[yellow_agent.get_name()]['nmoves'] += game.get_stats().get_tot_num_moves(yellow_agent.get_index())
+            match_stats[yellow_agent.get_name()]['nstates'] += game.get_stats().get_tot_expanded_states(yellow_agent.get_index())
+            match_stats[yellow_agent.get_name()]['timings'] += game.get_stats().get_tot_elapsed_time(yellow_agent.get_index())
             if game.get_state().is_win():
                 winning_cells = game.get_state().get_winner_positions()
                 winning_agent = game.get_agent(game.get_state().get_winner())
                 if verbosity > 1:
                     print('-> Run ', r, ' is won by ' + winning_agent.get_name() + '!')
-                win_stats[winning_agent.get_name()]['count'] += 1
-                win_stats[winning_agent.get_name()]['nmoves'] += game.get_stats().get_tot_num_moves(winning_agent.get_index())
-                win_stats[winning_agent.get_name()]['nstates'] += game.get_stats().get_tot_expanded_states(winning_agent.get_index())
-                win_stats[winning_agent.get_name()]['timings'] += game.get_stats().get_tot_elapsed_time(winning_agent.get_index())
+                match_stats[winning_agent.get_name()]['win_count'] += 1
             else:
                 if verbosity > 1:
                     print('-> Run #', r, ' ended with a tie!')
@@ -91,33 +96,37 @@ def play_schedule(schedule):
                 print('  - Number of moves: ', game.get_stats().get_tot_num_moves(yellow_agent.get_index())) 
                 print('  - Elapsed time: ', game.get_stats().get_tot_elapsed_time(yellow_agent.get_index())) 
                 print('  - Number of expanded states: ', game.get_stats().get_tot_expanded_states(yellow_agent.get_index())) 
-        if win_stats[match[0]]['count'] > win_stats[match[1]]['count']:
-            winners.append(match[0])
-        elif win_stats[match[1]]['count'] > win_stats[match[0]]['count']:
-            winners.append(match[1])
+        if match_stats[match[0]]['win_count'] > match_stats[match[1]]['win_count']:
+            match_winners.append(match[0])
+        elif match_stats[match[1]]['win_count'] > match_stats[match[0]]['win_count']:
+            match_winners.append(match[1])
         else:
-            if win_stats[match[0]]['nmoves'] < win_stats[match[1]]['nmoves']:
-                winners.append(match[0])
-            elif win_stats[match[1]]['nmoves'] < win_stats[match[0]]['nmoves']:
-                winners.append(match[1])
+            if match_stats[match[0]]['nmoves'] < match_stats[match[1]]['nmoves']:
+                match_winners.append(match[0])
+            elif match_stats[match[1]]['nmoves'] < match_stats[match[0]]['nmoves']:
+                match_winners.append(match[1])
             else:
-                if win_stats[match[0]]['nstates'] < win_stats[match[1]]['nstates']:
-                    winners.append(match[0])
-                elif win_stats[match[1]]['nstates'] < win_stats[match[0]]['nstates']:
-                    winners.append(match[1])
+                if match_stats[match[0]]['nstates'] < match_stats[match[1]]['nstates']:
+                    match_winners.append(match[0])
+                elif match_stats[match[1]]['nstates'] < match_stats[match[0]]['nstates']:
+                    match_winners.append(match[1])
                 else:
-                    if win_stats[match[0]]['timings'] < win_stats[match[1]]['timings']:
-                        winners.append(match[0])
-                    elif win_stats[match[1]]['timings'] < win_stats[match[0]]['timings']:
-                        winners.append(match[1])
+                    if match_stats[match[0]]['timings'] < match_stats[match[1]]['timings']:
+                        match_winners.append(match[0])
+                    elif match_stats[match[1]]['timings'] < match_stats[match[0]]['timings']:
+                        match_winners.append(match[1])
                     else:
-                        winners.append(match[0])
-                        winners.append(match[1])
+                        match_winners.append(match[0])
+                        match_winners.append(match[1])
+
         if verbosity > 1:
-            if len(winners) > 1:
+            if len(match_winners) > 1:
                 print('\n\n-> Match ', match[0], ' vs. ', match[1], ' ended with a draw!')
             else:
-                print('\n\n-> Match ', match[0], ' vs. ', match[1], ' is won by ', winners[0], '!')
+                print('\n\n-> Match ', match[0], ' vs. ', match[1], ' is won by ', match_winners[0], '!')
+
+        for w in match_winners:
+            winners.append(w)
 
     return winners
 
@@ -147,22 +156,22 @@ def main():
 
     random.seed(5489) # Just fix the seed to make executions reproducible
 
-    i = 1
+    #schedule = make_schedule(safe_modules)
 
-    schedule = make_schedule(safe_modules)
+    #if verbosity > 0:
+    #    print('Schedule #', i, ': ', schedule)
 
-    if verbosity > 0:
-        print('Schedule #', i, ': ', schedule)
+    #winners = play_schedule(schedule)
+    #if verbosity > 0:
+    #    print('-> Schedule #', i, ' Winners: ', winners)
 
-    winners = play_schedule(schedule)
-    if verbosity > 0:
-        print('-> Schedule #', i, ' Winners: ', winners)
-
+    i = 0
+    winners = safe_modules
     old_winners_len = 0
     while len(winners) > 1 and old_winners_len != len(winners):
+        i += 1
         if verbosity > 0:
             print('\n\n')
-        i += 1
         schedule = make_schedule(winners)
         if verbosity > 0:
             print('Schedule #', i, ': ', schedule)
@@ -170,6 +179,26 @@ def main():
         winners = play_schedule(schedule)
         if verbosity > 0:
             print('-> Schedule #', i, ' Winners: ', winners)
+        if len(winners) > 1 and (len(winners) % 2) != 0:
+            tie_agents = []
+            tie_agent_idx = random.choice(range(len(winners)))
+            tie_agents.append(winners[tie_agent_idx])
+            winners.pop(tie_agent_idx)
+            tie_agent_idx = random.choice(range(len(winners)))
+            tie_agents.append(winners[tie_agent_idx])
+            winners.pop(tie_agent_idx)
+            tie_schedule = make_schedule(tie_agents)
+            if verbosity > 0:
+                print('Tie-breaker Schedule #', i, ': ', tie_schedule)
+            tie_winners = play_schedule(tie_schedule)
+            if verbosity > 0:
+                print('-> Tie-breaker Schedule #', i, ' Winners: ', tie_winners)
+            if len(tie_winners) > 1:
+                # OK just choose one at random
+                tie_winners = [random.choice(tie_winners)]
+                if verbosity > 0:
+                    print('-> Unable to tie-broken current schedule. Random winner is: ', tie_winners)
+            winners.append(tie_winners[0])
 
     print('-> The final winner is: ', winners)
 
@@ -198,4 +227,6 @@ def main():
 
 
 if __name__ == '__main__':
+    import sys
+    sys.stdout.flush()
     main()
