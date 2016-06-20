@@ -200,10 +200,14 @@ class MinimaxComputerAgent(ComputerAgent):
     def __init__(self, index, depth=float('+inf'), eval_func=default_evaluation_function):
         ComputerAgent.__init__(self, index)
         self.depth = depth
+        self.num_expanded_nodes = 0
         self.evaluation_function = eval_func
 
     def get_depth(self):
         return self.depth
+
+    def num_expanded_states(self):
+        return self.num_expanded_nodes
 
     def get_action(self, game_state):
         if self.get_verbosity_level() > 1:
@@ -222,6 +226,7 @@ class MinimaxComputerAgent(ComputerAgent):
     def make_minimax_decision(self, game_state, agent_index, depth, first=False):
         if self.get_verbosity_level() > 1:
             print('  '*(depth+1) + 'Making MINIMAX-DECISION(',agent_index,',',depth,') ')
+        self.num_expanded_nodes += 1
         next_agent_index = 0
         if first:
             next_agent_index = agent_index
@@ -305,9 +310,13 @@ class AlphaBetaMinimaxComputerAgent(ComputerAgent):
         ComputerAgent.__init__(self, index)
         self.depth = depth
         self.evaluation_function = eval_func
+        self.num_expanded_nodes = 0
 
     def get_depth(self):
         return self.depth
+
+    def num_expanded_states(self):
+        return self.num_expanded_nodes
 
     def get_action(self, game_state):
         if self.get_verbosity_level() > 1:
@@ -326,6 +335,7 @@ class AlphaBetaMinimaxComputerAgent(ComputerAgent):
     def make_minimax_decision(self, game_state, agent_index, alpha, beta, depth, first=False):
         if self.get_verbosity_level() > 1:
             print('  '*(depth+1) + 'Making ALPHA-BETA-MINIMAX-DECISION(agent=',agent_index,',depth=',depth,',alpha=', alpha, ',beta=', beta, ')')
+        self.num_expanded_nodes += 1
         next_agent_index = 0
         if first:
             next_agent_index = agent_index
